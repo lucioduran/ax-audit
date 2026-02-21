@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Audit websites for AI Agent Experience (AX) readiness. Lighthouse for AI Agents.",
   "type": "module",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": "Lucio Duran <email@lucioduran.com> (https://lucioduran.com)",
   "repository": {
     "type": "git",
