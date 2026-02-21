@@ -1,34 +1,34 @@
-export const meta = {
+import type { CheckContext, CheckResult, CheckMeta, Finding } from '../types.js';
+
+export const meta: CheckMeta = {
   id: 'structured-data',
   name: 'Structured Data',
   description: 'Checks JSON-LD structured data on homepage',
   weight: 15,
 };
 
-export default async function check(ctx) {
+export default async function check(ctx: CheckContext): Promise<CheckResult> {
   const start = performance.now();
-  const findings = [];
+  const findings: Finding[] = [];
   let score = 100;
 
   const html = ctx.html;
   if (!html) {
     findings.push({ status: 'fail', message: 'Could not fetch homepage HTML' });
-    return result(0, findings, start);
+    return build(0, findings, start);
   }
 
-  // Extract JSON-LD blocks
   const jsonLdPattern = /<script\s+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
   const blocks = [...html.matchAll(jsonLdPattern)];
 
   if (blocks.length === 0) {
     findings.push({ status: 'fail', message: 'No JSON-LD structured data found' });
-    return result(0, findings, start);
+    return build(0, findings, start);
   }
 
   findings.push({ status: 'pass', message: `${blocks.length} JSON-LD block(s) found` });
 
-  // Parse all blocks (unescape HTML entities first — common in SSR frameworks)
-  const parsed = [];
+  const parsed: Record<string, unknown>[] = [];
   for (const block of blocks) {
     const raw = unescapeHtml(block[1]);
     try {
@@ -41,13 +41,12 @@ export default async function check(ctx) {
 
   if (parsed.length === 0) {
     findings.push({ status: 'fail', message: 'All JSON-LD blocks have invalid JSON' });
-    return result(10, findings, start);
+    return build(10, findings, start);
   }
 
-  // Check for @context schema.org
   const hasContext = parsed.some(d => {
-    const ctx = d['@context'];
-    return ctx && (ctx === 'https://schema.org' || ctx === 'https://schema.org/' || ctx === 'http://schema.org');
+    const c = d['@context'];
+    return c && (c === 'https://schema.org' || c === 'https://schema.org/' || c === 'http://schema.org');
   });
   if (hasContext) {
     findings.push({ status: 'pass', message: '@context references schema.org' });
@@ -56,7 +55,6 @@ export default async function check(ctx) {
     score -= 15;
   }
 
-  // Check for @graph (multi-entity pattern)
   const hasGraph = parsed.some(d => Array.isArray(d['@graph']));
   if (hasGraph) {
     findings.push({ status: 'pass', message: '@graph array present (multi-entity structured data)' });
@@ -65,13 +63,11 @@ export default async function check(ctx) {
     score -= 5;
   }
 
-  // Collect all types
-  const allTypes = new Set();
+  const allTypes = new Set<string>();
   for (const d of parsed) {
     collectTypes(d, allTypes);
   }
 
-  // Key types for AI agents
   const importantTypes = ['Person', 'Organization', 'WebSite', 'WebPage', 'ProfilePage'];
   const foundTypes = importantTypes.filter(t => allTypes.has(t));
 
@@ -85,7 +81,6 @@ export default async function check(ctx) {
     score -= 15;
   }
 
-  // BreadcrumbList
   if (allTypes.has('BreadcrumbList')) {
     findings.push({ status: 'pass', message: 'BreadcrumbList present' });
   } else {
@@ -93,10 +88,10 @@ export default async function check(ctx) {
     score -= 5;
   }
 
-  return result(Math.max(0, score), findings, start);
+  return build(Math.max(0, score), findings, start);
 }
 
-function unescapeHtml(str) {
+function unescapeHtml(str: string): string {
   return str
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
@@ -107,20 +102,21 @@ function unescapeHtml(str) {
     .replace(/&#x2F;/g, '/');
 }
 
-function collectTypes(obj, types) {
+function collectTypes(obj: unknown, types: Set<string>): void {
   if (!obj || typeof obj !== 'object') return;
-  if (obj['@type']) {
-    const t = Array.isArray(obj['@type']) ? obj['@type'] : [obj['@type']];
+  const record = obj as Record<string, unknown>;
+  if (record['@type']) {
+    const t = Array.isArray(record['@type']) ? record['@type'] as string[] : [record['@type'] as string];
     t.forEach(type => types.add(type));
   }
-  if (Array.isArray(obj['@graph'])) {
-    obj['@graph'].forEach(item => collectTypes(item, types));
+  if (Array.isArray(record['@graph'])) {
+    (record['@graph'] as unknown[]).forEach(item => collectTypes(item, types));
   }
   if (Array.isArray(obj)) {
-    obj.forEach(item => collectTypes(item, types));
+    (obj as unknown[]).forEach(item => collectTypes(item, types));
   }
 }
 
-function result(score, findings, start) {
+function build(score: number, findings: Finding[], start: number): CheckResult {
   return { id: meta.id, name: meta.name, description: meta.description, score, findings, duration: Math.round(performance.now() - start) };
 }
