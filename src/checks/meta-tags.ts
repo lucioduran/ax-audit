@@ -1,4 +1,5 @@
 import type { CheckContext, CheckResult, CheckMeta, Finding } from '../types.js';
+import { buildResult } from './utils.js';
 
 export const meta: CheckMeta = {
   id: 'meta-tags',
@@ -17,7 +18,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   const html = ctx.html;
   if (!html) {
     findings.push({ status: 'fail', message: 'Could not fetch homepage HTML' });
-    return build(0, findings, start);
+    return buildResult(meta, 0, findings, start);
   }
 
   const foundAiMeta = AI_META_NAMES.filter(name => {
@@ -72,13 +73,9 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     score -= 10;
   }
 
-  return build(Math.max(0, Math.min(100, score)), findings, start);
+  return buildResult(meta, Math.max(0, Math.min(100, score)), findings, start);
 }
 
 function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function build(score: number, findings: Finding[], start: number): CheckResult {
-  return { id: meta.id, name: meta.name, description: meta.description, score, findings, duration: Math.round(performance.now() - start) };
 }
