@@ -72,7 +72,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     score -= 10;
   }
 
-  return build(Math.max(0, score), findings, start);
+  return build(Math.max(0, Math.min(100, score)), findings, start);
 }
 
 function escapeRegex(str: string): string {

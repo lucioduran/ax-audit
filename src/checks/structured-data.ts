@@ -88,7 +88,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     score -= 5;
   }
 
-  return build(Math.max(0, score), findings, start);
+  return build(Math.max(0, Math.min(100, score)), findings, start);
 }
 
 function unescapeHtml(str: string): string {
