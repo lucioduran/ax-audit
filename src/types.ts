@@ -62,6 +62,7 @@ export interface AuditOptions {
   url: string;
   checks?: string[];
   timeout?: number;
+  verbose?: boolean;
 }
 
 export interface SecurityHeader {

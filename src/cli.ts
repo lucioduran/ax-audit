@@ -15,7 +15,8 @@ export function cli(argv: string[]): void {
     .option('--output <format>', 'Output format: terminal, json', 'terminal')
     .option('--checks <list>', 'Comma-separated list of checks to run')
     .option('--timeout <ms>', 'Per-request timeout in milliseconds', '10000')
-    .action(async (url: string, options: { json?: boolean; output: string; checks?: string; timeout: string }) => {
+    .option('--verbose', 'Show detailed request and check execution logs')
+    .action(async (url: string, options: { json?: boolean; output: string; checks?: string; timeout: string; verbose?: boolean }) => {
       try {
         new URL(url);
       } catch {
@@ -33,6 +34,7 @@ export function cli(argv: string[]): void {
           url,
           checks,
           timeout: parseInt(options.timeout, 10),
+          verbose: options.verbose,
         });
 
         report(result, format);
