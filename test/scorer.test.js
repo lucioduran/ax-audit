@@ -1,0 +1,89 @@
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { calculateOverallScore, getGrade } from '../dist/scorer.js';
+
+describe('scorer', () => {
+  describe('calculateOverallScore', () => {
+    it('should return 100 when all checks score 100', () => {
+      const results = [
+        { id: 'a', name: 'A', description: '', score: 100, findings: [], duration: 0 },
+        { id: 'b', name: 'B', description: '', score: 100, findings: [], duration: 0 },
+      ];
+      const metas = [
+        { id: 'a', name: 'A', description: '', weight: 50 },
+        { id: 'b', name: 'B', description: '', weight: 50 },
+      ];
+      assert.equal(calculateOverallScore(results, metas), 100);
+    });
+
+    it('should return 0 when all checks score 0', () => {
+      const results = [
+        { id: 'a', name: 'A', description: '', score: 0, findings: [], duration: 0 },
+        { id: 'b', name: 'B', description: '', score: 0, findings: [], duration: 0 },
+      ];
+      const metas = [
+        { id: 'a', name: 'A', description: '', weight: 50 },
+        { id: 'b', name: 'B', description: '', weight: 50 },
+      ];
+      assert.equal(calculateOverallScore(results, metas), 0);
+    });
+
+    it('should calculate weighted average correctly', () => {
+      const results = [
+        { id: 'a', name: 'A', description: '', score: 100, findings: [], duration: 0 },
+        { id: 'b', name: 'B', description: '', score: 0, findings: [], duration: 0 },
+      ];
+      const metas = [
+        { id: 'a', name: 'A', description: '', weight: 75 },
+        { id: 'b', name: 'B', description: '', weight: 25 },
+      ];
+      assert.equal(calculateOverallScore(results, metas), 75);
+    });
+
+    it('should handle equal weights', () => {
+      const results = [
+        { id: 'a', name: 'A', description: '', score: 80, findings: [], duration: 0 },
+        { id: 'b', name: 'B', description: '', score: 60, findings: [], duration: 0 },
+      ];
+      const metas = [
+        { id: 'a', name: 'A', description: '', weight: 10 },
+        { id: 'b', name: 'B', description: '', weight: 10 },
+      ];
+      assert.equal(calculateOverallScore(results, metas), 70);
+    });
+
+    it('should clamp result between 0 and 100', () => {
+      const results = [
+        { id: 'a', name: 'A', description: '', score: 150, findings: [], duration: 0 },
+      ];
+      const metas = [
+        { id: 'a', name: 'A', description: '', weight: 10 },
+      ];
+      const score = calculateOverallScore(results, metas);
+      assert.ok(score <= 100);
+    });
+  });
+
+  describe('getGrade', () => {
+    it('should return Excellent for score >= 90', () => {
+      assert.equal(getGrade(90).label, 'Excellent');
+      assert.equal(getGrade(100).label, 'Excellent');
+      assert.equal(getGrade(95).label, 'Excellent');
+    });
+
+    it('should return Good for score 70-89', () => {
+      assert.equal(getGrade(70).label, 'Good');
+      assert.equal(getGrade(89).label, 'Good');
+    });
+
+    it('should return Fair for score 50-69', () => {
+      assert.equal(getGrade(50).label, 'Fair');
+      assert.equal(getGrade(69).label, 'Fair');
+    });
+
+    it('should return Poor for score < 50', () => {
+      assert.equal(getGrade(0).label, 'Poor');
+      assert.equal(getGrade(49).label, 'Poor');
+    });
+  });
+});

@@ -48,6 +48,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node bin/ax-audit.js",
+    "pretest": "npm run build",
     "test": "node --test test/**/*.test.js",
     "prepublishOnly": "npm run build"
   },
