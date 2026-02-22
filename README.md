@@ -1,5 +1,6 @@
 # ax-audit
 
+[![CI](https://github.com/lucioduran/ax-audit/actions/workflows/ci.yml/badge.svg)](https://github.com/lucioduran/ax-audit/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/ax-audit.svg)](https://www.npmjs.com/package/ax-audit)
 [![license](https://img.shields.io/npm/l/ax-audit.svg)](https://github.com/lucioduran/ax-audit/blob/main/LICENSE)
 [![node](https://img.shields.io/node/v/ax-audit.svg)](https://nodejs.org)
