@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { audit } from './orchestrator.js';
 import { report } from './reporter/index.js';
 import { VERSION } from './constants.js';
+import { checks as allChecks } from './checks/index.js';
 
 export function cli(argv: string[]): void {
   const program = new Command();
@@ -28,6 +29,16 @@ export function cli(argv: string[]): void {
       const checks = options.checks
         ? options.checks.split(',').map(s => s.trim())
         : undefined;
+
+      if (checks) {
+        const validIds = allChecks.map(c => c.meta.id);
+        const invalid = checks.filter(id => !validIds.includes(id));
+        if (invalid.length > 0) {
+          console.error(`Error: Unknown check(s): ${invalid.join(', ')}`);
+          console.error(`Available checks: ${validIds.join(', ')}`);
+          process.exit(1);
+        }
+      }
 
       try {
         const result = await audit({
