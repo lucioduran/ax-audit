@@ -2,6 +2,78 @@ import { SECURITY_HEADERS } from '../constants.js';
 import type { CheckContext, CheckResult, CheckMeta, Finding } from '../types.js';
 import { buildResult } from './utils.js';
 
+interface LinkEntry {
+  url: string;
+  params: Record<string, string>;
+}
+
+/** Parse an RFC 5988 Link header into structured entries. */
+export function parseLinkHeader(header: string): LinkEntry[] {
+  if (!header) return [];
+
+  const entries: LinkEntry[] = [];
+  // Split on commas that are outside angle brackets and quoted strings
+  const parts = splitLinkHeader(header);
+
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+
+    // Extract URL from <...>
+    const urlMatch = trimmed.match(/^<([^>]*)>/);
+    if (!urlMatch) continue;
+
+    const url = urlMatch[1];
+    const rest = trimmed.slice(urlMatch[0].length);
+    const params: Record<string, string> = {};
+
+    // Parse ; key="value" or ; key=value pairs
+    const paramRegex = /;\s*([^=\s]+)\s*=\s*(?:"([^"]*)"|([^\s;,]*))/g;
+    let match;
+    while ((match = paramRegex.exec(rest)) !== null) {
+      params[match[1].toLowerCase()] = match[2] ?? match[3];
+    }
+
+    entries.push({ url, params });
+  }
+
+  return entries;
+}
+
+/** Split a Link header value by commas, respecting angle brackets. */
+function splitLinkHeader(header: string): string[] {
+  const parts: string[] = [];
+  let current = '';
+  let inAngle = false;
+  let inQuote = false;
+
+  for (let i = 0; i < header.length; i++) {
+    const ch = header[i];
+
+    if (ch === '"' && !inAngle) {
+      inQuote = !inQuote;
+      current += ch;
+    } else if (ch === '<' && !inQuote) {
+      inAngle = true;
+      current += ch;
+    } else if (ch === '>' && !inQuote) {
+      inAngle = false;
+      current += ch;
+    } else if (ch === ',' && !inAngle && !inQuote) {
+      parts.push(current);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+
+  if (current.trim()) {
+    parts.push(current);
+  }
+
+  return parts;
+}
+
 export const meta: CheckMeta = {
   id: 'http-headers',
   name: 'HTTP Headers',
@@ -43,8 +115,9 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   }
 
   const linkHeader = headers['link'] || '';
-  const hasLlmsLink = /llms\.txt/i.test(linkHeader);
-  const hasAgentLink = /agent\.json/i.test(linkHeader);
+  const links = parseLinkHeader(linkHeader);
+  const hasLlmsLink = links.some((l) => /llms\.txt/i.test(l.url));
+  const hasAgentLink = links.some((l) => /agent\.json/i.test(l.url));
 
   if (hasLlmsLink && hasAgentLink) {
     findings.push({ status: 'pass', message: 'Link header references both llms.txt and agent.json' });
