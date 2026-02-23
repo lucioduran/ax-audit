@@ -105,6 +105,37 @@ describe('structured-data', () => {
     assert.ok(result.findings.some(f => f.status === 'pass' && f.message.includes('JSON-LD block')));
   });
 
+  it('should accept @context as array with schema.org', async () => {
+    const jsonLd = { '@context': ['https://schema.org', { '@language': 'en' }], '@type': 'Organization', name: 'Test' };
+    const html = `<html><head><script type="application/ld+json">${JSON.stringify(jsonLd)}</script></head></html>`;
+    const ctx = mockContext({}, { html });
+    const result = await check(ctx);
+    assert.ok(result.findings.some(f => f.status === 'pass' && f.message.includes('@context')));
+  });
+
+  it('should accept @context as object with @vocab', async () => {
+    const jsonLd = { '@context': { '@vocab': 'https://schema.org/' }, '@type': 'Organization', name: 'Test' };
+    const html = `<html><head><script type="application/ld+json">${JSON.stringify(jsonLd)}</script></head></html>`;
+    const ctx = mockContext({}, { html });
+    const result = await check(ctx);
+    assert.ok(result.findings.some(f => f.status === 'pass' && f.message.includes('@context')));
+  });
+
+  it('should detect types in nested entities (author, publisher)', async () => {
+    const jsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: 'Home',
+      author: { '@type': 'Person', name: 'John' },
+      publisher: { '@type': 'Organization', name: 'Corp' },
+    };
+    const html = `<html><head><script type="application/ld+json">${JSON.stringify(jsonLd)}</script></head></html>`;
+    const ctx = mockContext({}, { html });
+    const result = await check(ctx);
+    assert.ok(result.findings.some(f => f.status === 'pass' && f.message.includes('Person')));
+    assert.ok(result.findings.some(f => f.status === 'pass' && f.message.includes('Organization')));
+  });
+
   it('should detect multiple JSON-LD blocks', async () => {
     const block1 = JSON.stringify({ '@context': 'https://schema.org', '@type': 'Organization', name: 'Test' });
     const block2 = JSON.stringify({ '@context': 'https://schema.org', '@type': 'WebSite', name: 'Test' });
