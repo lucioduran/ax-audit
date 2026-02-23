@@ -1,6 +1,6 @@
 {
   "name": "ax-audit",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "description": "Audit websites for AI Agent Experience (AX) readiness. Lighthouse for AI Agents.",
   "type": "module",
   "license": "Apache-2.0",
@@ -21,6 +21,7 @@
     "lighthouse",
     "llms-txt",
     "a2a",
+    "mcp",
     "seo",
     "cli",
     "devtools",
@@ -40,7 +41,8 @@
     "bin/",
     "dist/",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md"
   ],
   "engines": {
     "node": ">=18.0.0"
