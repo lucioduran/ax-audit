@@ -16,7 +16,11 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   const res = await ctx.fetch(`${ctx.url}/.well-known/openapi.json`);
 
   if (!res.ok) {
-    findings.push({ status: 'fail', message: '/.well-known/openapi.json not found', detail: `HTTP ${res.status || 'network error'}` });
+    findings.push({
+      status: 'fail',
+      message: '/.well-known/openapi.json not found',
+      detail: `HTTP ${res.status || 'network error'}`,
+    });
     return buildResult(meta, 0, findings, start);
   }
 

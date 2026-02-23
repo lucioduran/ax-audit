@@ -22,7 +22,10 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
 
   findings.push({ status: 'pass', message: '/llms.txt exists' });
   const text = res.body;
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const lines = text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
 
   if (!lines[0]?.startsWith('# ')) {
     findings.push({ status: 'warn', message: 'Missing H1 heading (first line should start with "# ")' });
@@ -31,7 +34,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     findings.push({ status: 'pass', message: `H1 heading: "${lines[0].slice(2)}"` });
   }
 
-  const hasBlockquote = lines.some(l => l.startsWith('> '));
+  const hasBlockquote = lines.some((l) => l.startsWith('> '));
   if (!hasBlockquote) {
     findings.push({ status: 'warn', message: 'No blockquote description found ("> ...")' });
     score -= 10;
@@ -39,7 +42,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     findings.push({ status: 'pass', message: 'Blockquote description present' });
   }
 
-  const sections = lines.filter(l => l.startsWith('## '));
+  const sections = lines.filter((l) => l.startsWith('## '));
   if (sections.length === 0) {
     findings.push({ status: 'warn', message: 'No section headings found (## ...)' });
     score -= 10;

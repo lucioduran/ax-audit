@@ -18,15 +18,11 @@ export async function audit(options: AuditOptions): Promise<AuditReport> {
     headers: homepage.headers,
   };
 
-  const checksToRun = options.checks
-    ? allChecks.filter(c => options.checks!.includes(c.meta.id))
-    : allChecks;
+  const checksToRun = options.checks ? allChecks.filter((c) => options.checks!.includes(c.meta.id)) : allChecks;
 
-  log(`running ${checksToRun.length} check(s): ${checksToRun.map(c => c.meta.id).join(', ')}`);
+  log(`running ${checksToRun.length} check(s): ${checksToRun.map((c) => c.meta.id).join(', ')}`);
 
-  const settled = await Promise.allSettled(
-    checksToRun.map(c => c.run(ctx))
-  );
+  const settled = await Promise.allSettled(checksToRun.map((c) => c.run(ctx)));
 
   const results: CheckResult[] = settled.map((s, i) => {
     if (s.status === 'fulfilled') {
@@ -44,7 +40,10 @@ export async function audit(options: AuditOptions): Promise<AuditReport> {
     };
   });
 
-  const overallScore = calculateOverallScore(results, checksToRun.map(c => c.meta));
+  const overallScore = calculateOverallScore(
+    results,
+    checksToRun.map((c) => c.meta),
+  );
   const grade = getGrade(overallScore);
 
   return {

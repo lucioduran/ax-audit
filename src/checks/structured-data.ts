@@ -45,7 +45,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     return buildResult(meta, 10, findings, start);
   }
 
-  const hasContext = parsed.some(d => {
+  const hasContext = parsed.some((d) => {
     const c = d['@context'];
     return c && (c === 'https://schema.org' || c === 'https://schema.org/' || c === 'http://schema.org');
   });
@@ -56,7 +56,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     score -= 15;
   }
 
-  const hasGraph = parsed.some(d => Array.isArray(d['@graph']));
+  const hasGraph = parsed.some((d) => Array.isArray(d['@graph']));
   if (hasGraph) {
     findings.push({ status: 'pass', message: '@graph array present (multi-entity structured data)' });
   } else {
@@ -70,12 +70,16 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   }
 
   const importantTypes = ['Person', 'Organization', 'WebSite', 'WebPage', 'ProfilePage'];
-  const foundTypes = importantTypes.filter(t => allTypes.has(t));
+  const foundTypes = importantTypes.filter((t) => allTypes.has(t));
 
   if (foundTypes.length >= 2) {
     findings.push({ status: 'pass', message: `Key types found: ${foundTypes.join(', ')}` });
   } else if (foundTypes.length === 1) {
-    findings.push({ status: 'warn', message: `Only 1 key type found: ${foundTypes[0]}`, detail: `Consider adding: ${importantTypes.filter(t => !allTypes.has(t)).join(', ')}` });
+    findings.push({
+      status: 'warn',
+      message: `Only 1 key type found: ${foundTypes[0]}`,
+      detail: `Consider adding: ${importantTypes.filter((t) => !allTypes.has(t)).join(', ')}`,
+    });
     score -= 10;
   } else {
     findings.push({ status: 'warn', message: 'No key entity types (Person, Organization, WebSite, etc.)' });
@@ -107,13 +111,13 @@ function collectTypes(obj: unknown, types: Set<string>): void {
   if (!obj || typeof obj !== 'object') return;
   const record = obj as Record<string, unknown>;
   if (record['@type']) {
-    const t = Array.isArray(record['@type']) ? record['@type'] as string[] : [record['@type'] as string];
-    t.forEach(type => types.add(type));
+    const t = Array.isArray(record['@type']) ? (record['@type'] as string[]) : [record['@type'] as string];
+    t.forEach((type) => types.add(type));
   }
   if (Array.isArray(record['@graph'])) {
-    (record['@graph'] as unknown[]).forEach(item => collectTypes(item, types));
+    (record['@graph'] as unknown[]).forEach((item) => collectTypes(item, types));
   }
   if (Array.isArray(obj)) {
-    (obj as unknown[]).forEach(item => collectTypes(item, types));
+    (obj as unknown[]).forEach((item) => collectTypes(item, types));
   }
 }

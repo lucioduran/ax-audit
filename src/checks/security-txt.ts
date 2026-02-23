@@ -17,7 +17,11 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   const res = await ctx.fetch(`${ctx.url}/.well-known/security.txt`);
 
   if (!res.ok) {
-    findings.push({ status: 'fail', message: '/.well-known/security.txt not found', detail: `HTTP ${res.status || 'network error'}` });
+    findings.push({
+      status: 'fail',
+      message: '/.well-known/security.txt not found',
+      detail: `HTTP ${res.status || 'network error'}`,
+    });
     return buildResult(meta, 0, findings, start);
   }
 
@@ -34,12 +38,15 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     }
   }
 
-  const expiresMatch = text.match(/^Expires:\s*(.+)/mi);
+  const expiresMatch = text.match(/^Expires:\s*(.+)/im);
   if (expiresMatch) {
     const expiresDate = new Date(expiresMatch[1].trim());
     if (!isNaN(expiresDate.getTime())) {
       if (expiresDate > new Date()) {
-        findings.push({ status: 'pass', message: `Expires date is in the future (${expiresDate.toISOString().split('T')[0]})` });
+        findings.push({
+          status: 'pass',
+          message: `Expires date is in the future (${expiresDate.toISOString().split('T')[0]})`,
+        });
       } else {
         findings.push({ status: 'fail', message: 'Expires date is in the past — security.txt is expired' });
         score -= 20;
@@ -48,7 +55,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   }
 
   const optionalFields = ['Canonical', 'Preferred-Languages', 'Policy', 'Encryption', 'Hiring'];
-  const present = optionalFields.filter(f => new RegExp(`^${f}:`, 'mi').test(text));
+  const present = optionalFields.filter((f) => new RegExp(`^${f}:`, 'mi').test(text));
   if (present.length >= 3) {
     findings.push({ status: 'pass', message: `${present.length}/${optionalFields.length} optional fields present` });
   } else if (present.length > 0) {

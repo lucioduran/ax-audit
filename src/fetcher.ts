@@ -30,7 +30,7 @@ export function createFetcher({ timeout = 10000, verbose = false }: FetcherOptio
         signal: controller.signal,
         headers: {
           'User-Agent': USER_AGENT,
-          'Accept': 'text/html, application/json, text/plain, */*',
+          Accept: 'text/html, application/json, text/plain, */*',
         },
         redirect: 'follow',
       });
