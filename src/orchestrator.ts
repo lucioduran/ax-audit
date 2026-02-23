@@ -1,7 +1,7 @@
 import { createFetcher } from './fetcher.js';
 import { checks as allChecks } from './checks/index.js';
 import { calculateOverallScore, getGrade } from './scorer.js';
-import type { AuditOptions, AuditReport, CheckContext, CheckResult } from './types.js';
+import type { AuditOptions, AuditReport, BatchAuditReport, CheckContext, CheckResult } from './types.js';
 
 export async function audit(options: AuditOptions): Promise<AuditReport> {
   const startTime = performance.now();
@@ -52,6 +52,31 @@ export async function audit(options: AuditOptions): Promise<AuditReport> {
     overallScore,
     grade,
     results,
+    duration: Math.round(performance.now() - startTime),
+  };
+}
+
+export async function batchAudit(urls: string[], options: Omit<AuditOptions, 'url'>): Promise<BatchAuditReport> {
+  const startTime = performance.now();
+  const reports: AuditReport[] = [];
+
+  for (const url of urls) {
+    const result = await audit({ ...options, url });
+    reports.push(result);
+  }
+
+  const scores = reports.map((r) => r.overallScore);
+  const averageScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+
+  return {
+    reports,
+    summary: {
+      total: reports.length,
+      passed: reports.filter((r) => r.overallScore >= 70).length,
+      failed: reports.filter((r) => r.overallScore < 70).length,
+      averageScore,
+      grade: getGrade(averageScore),
+    },
     duration: Math.round(performance.now() - startTime),
   };
 }
