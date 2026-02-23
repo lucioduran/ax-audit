@@ -60,12 +60,13 @@ export const CORE_AI_CRAWLERS: string[] = [
 export const CHECK_WEIGHTS: Record<string, number> = {
   'llms-txt': 15,
   'robots-txt': 15,
-  'structured-data': 15,
-  'http-headers': 15,
+  'structured-data': 13,
+  'http-headers': 13,
   'agent-json': 10,
-  'security-txt': 10,
-  'meta-tags': 10,
-  openapi: 10,
+  mcp: 10,
+  'security-txt': 8,
+  'meta-tags': 8,
+  openapi: 8,
 };
 
 export const GRADES: Grade[] = [

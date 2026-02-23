@@ -5,7 +5,7 @@ export const meta: CheckMeta = {
   id: 'structured-data',
   name: 'Structured Data',
   description: 'Checks JSON-LD structured data on homepage',
-  weight: 15,
+  weight: 13,
 };
 
 export default async function check(ctx: CheckContext): Promise<CheckResult> {

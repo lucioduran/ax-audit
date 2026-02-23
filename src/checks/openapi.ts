@@ -5,7 +5,7 @@ export const meta: CheckMeta = {
   id: 'openapi',
   name: 'OpenAPI Spec',
   description: 'Checks /.well-known/openapi.json presence and validity',
-  weight: 10,
+  weight: 8,
 };
 
 export default async function check(ctx: CheckContext): Promise<CheckResult> {
