@@ -78,17 +78,20 @@ ax-audit https://example.com --verbose
 
 ## Programmatic API
 
-Full TypeScript support with exported types.
+Full TypeScript support with all types exported.
 
 ```typescript
 import { audit } from 'ax-audit';
+import type { AuditReport, AuditOptions, CheckResult, Finding, Grade } from 'ax-audit';
 
-const report = await audit({ url: 'https://example.com' });
+const report: AuditReport = await audit({ url: 'https://example.com' });
 
 console.log(report.overallScore); // 0-100
 console.log(report.grade.label);  // 'Excellent' | 'Good' | 'Fair' | 'Poor'
 console.log(report.results);      // Individual check results with findings
 ```
+
+Also exports `calculateOverallScore`, `getGrade`, and `checks` for advanced usage.
 
 ## Scoring
 

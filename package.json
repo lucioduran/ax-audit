@@ -31,11 +31,11 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/orchestrator.d.ts",
-      "default": "./dist/orchestrator.js"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     }
   },
-  "types": "./dist/orchestrator.d.ts",
+  "types": "./dist/index.d.ts",
   "files": [
     "bin/",
     "dist/",
