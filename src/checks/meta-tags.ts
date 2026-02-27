@@ -21,23 +21,31 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     return buildResult(meta, 0, findings, start);
   }
 
-  const foundAiMeta = AI_META_NAMES.filter(name => {
+  const foundAiMeta = AI_META_NAMES.filter((name) => {
     const pattern = new RegExp(`<meta\\s+[^>]*name=["']${escapeRegex(name)}["'][^>]*>`, 'i');
     return pattern.test(html);
   });
 
   if (foundAiMeta.length >= 3) {
-    findings.push({ status: 'pass', message: `${foundAiMeta.length}/${AI_META_NAMES.length} AI meta tags found`, detail: foundAiMeta.join(', ') });
+    findings.push({
+      status: 'pass',
+      message: `${foundAiMeta.length}/${AI_META_NAMES.length} AI meta tags found`,
+      detail: foundAiMeta.join(', '),
+    });
   } else if (foundAiMeta.length > 0) {
-    findings.push({ status: 'warn', message: `${foundAiMeta.length}/${AI_META_NAMES.length} AI meta tags found`, detail: foundAiMeta.join(', ') });
+    findings.push({
+      status: 'warn',
+      message: `${foundAiMeta.length}/${AI_META_NAMES.length} AI meta tags found`,
+      detail: foundAiMeta.join(', '),
+    });
     score -= 15;
   } else {
     findings.push({ status: 'warn', message: 'No AI meta tags (ai:*) found' });
     score -= 25;
   }
 
-  const hasLlmsAlternate = /rel=["']alternate["'][^>]*llms\.txt/i.test(html) ||
-    /llms\.txt[^>]*rel=["']alternate["']/i.test(html);
+  const hasLlmsAlternate =
+    /rel=["']alternate["'][^>]*llms\.txt/i.test(html) || /llms\.txt[^>]*rel=["']alternate["']/i.test(html);
   if (hasLlmsAlternate) {
     findings.push({ status: 'pass', message: 'rel="alternate" link to llms.txt present' });
   } else {
@@ -45,8 +53,8 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     score -= 15;
   }
 
-  const hasAgentAlternate = /rel=["']alternate["'][^>]*agent\.json/i.test(html) ||
-    /agent\.json[^>]*rel=["']alternate["']/i.test(html);
+  const hasAgentAlternate =
+    /rel=["']alternate["'][^>]*agent\.json/i.test(html) || /agent\.json[^>]*rel=["']alternate["']/i.test(html);
   if (hasAgentAlternate) {
     findings.push({ status: 'pass', message: 'rel="alternate" link to agent.json present' });
   } else {

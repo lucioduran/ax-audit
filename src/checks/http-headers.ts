@@ -35,7 +35,10 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   } else if (securityCount >= 4) {
     findings.push({ status: 'pass', message: `${securityCount}/${SECURITY_HEADERS.length} security headers present` });
   } else {
-    findings.push({ status: 'warn', message: `Only ${securityCount}/${SECURITY_HEADERS.length} security headers present` });
+    findings.push({
+      status: 'warn',
+      message: `Only ${securityCount}/${SECURITY_HEADERS.length} security headers present`,
+    });
     score -= 5;
   }
 
@@ -74,7 +77,10 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
 
   const llmsRes = await ctx.fetch(`${ctx.url}/llms.txt`);
   if (llmsRes.ok && llmsRes.headers['x-robots-tag']?.includes('noindex')) {
-    findings.push({ status: 'pass', message: 'X-Robots-Tag: noindex on /llms.txt (prevents search indexing of raw text)' });
+    findings.push({
+      status: 'pass',
+      message: 'X-Robots-Tag: noindex on /llms.txt (prevents search indexing of raw text)',
+    });
   }
 
   return buildResult(meta, Math.max(0, Math.min(100, score)), findings, start);

@@ -16,7 +16,7 @@ function gradeColor(grade: Grade) {
 }
 
 export function reportTerminal(report: AuditReport): void {
-  const grade = GRADES.find(g => report.overallScore >= g.min) || GRADES[GRADES.length - 1];
+  const grade = GRADES.find((g) => report.overallScore >= g.min) || GRADES[GRADES.length - 1];
   const colorFn = gradeColor(grade);
 
   console.log();
@@ -28,7 +28,9 @@ export function reportTerminal(report: AuditReport): void {
   const barWidth = 40;
   const filled = Math.round((report.overallScore / 100) * barWidth);
   const empty = barWidth - filled;
-  console.log(`  ${colorFn('\u2588'.repeat(filled))}${chalk.gray('\u2591'.repeat(empty))}  ${colorFn.bold(report.overallScore + '/100')}  ${colorFn(grade.label)}`);
+  console.log(
+    `  ${colorFn('\u2588'.repeat(filled))}${chalk.gray('\u2591'.repeat(empty))}  ${colorFn.bold(report.overallScore + '/100')}  ${colorFn(grade.label)}`,
+  );
   console.log();
 
   for (const check of report.results) {

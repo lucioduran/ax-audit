@@ -17,7 +17,11 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   const res = await ctx.fetch(`${ctx.url}/.well-known/agent.json`);
 
   if (!res.ok) {
-    findings.push({ status: 'fail', message: '/.well-known/agent.json not found', detail: `HTTP ${res.status || 'network error'}` });
+    findings.push({
+      status: 'fail',
+      message: '/.well-known/agent.json not found',
+      detail: `HTTP ${res.status || 'network error'}`,
+    });
     return buildResult(meta, 0, findings, start);
   }
 
@@ -56,11 +60,17 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   }
 
   const optionalFields = ['capabilities', 'authentication', 'documentationUrl'];
-  const presentOptional = optionalFields.filter(f => data[f] !== undefined);
+  const presentOptional = optionalFields.filter((f) => data[f] !== undefined);
   if (presentOptional.length === optionalFields.length) {
-    findings.push({ status: 'pass', message: 'All optional fields present (capabilities, authentication, documentationUrl)' });
+    findings.push({
+      status: 'pass',
+      message: 'All optional fields present (capabilities, authentication, documentationUrl)',
+    });
   } else if (presentOptional.length > 0) {
-    findings.push({ status: 'pass', message: `${presentOptional.length}/${optionalFields.length} optional fields present` });
+    findings.push({
+      status: 'pass',
+      message: `${presentOptional.length}/${optionalFields.length} optional fields present`,
+    });
   } else {
     findings.push({ status: 'warn', message: 'No optional fields (capabilities, authentication, documentationUrl)' });
     score -= 5;

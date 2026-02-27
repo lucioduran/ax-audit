@@ -11,32 +11,50 @@ export const USER_AGENT = `ax-audit/${pkg.version} (https://github.com/luciodura
 
 export const AI_CRAWLERS: Record<string, string[]> = {
   training: [
-    'GPTBot', 'ClaudeBot', 'Claude-Web', 'Anthropic-AI',
-    'Google-Extended', 'CCBot', 'Bytespider',
-    'Meta-ExternalAgent', 'Meta-ExternalFetcher',
-    'Cohere-AI', 'cohere-training-data-crawler',
-    'Applebot-Extended', 'Amazonbot', 'AI2Bot', 'AI2Bot-Dolma',
-    'DeepSeek-AI', 'PanguBot', 'Diffbot',
+    'GPTBot',
+    'ClaudeBot',
+    'Claude-Web',
+    'Anthropic-AI',
+    'Google-Extended',
+    'CCBot',
+    'Bytespider',
+    'Meta-ExternalAgent',
+    'Meta-ExternalFetcher',
+    'Cohere-AI',
+    'cohere-training-data-crawler',
+    'Applebot-Extended',
+    'Amazonbot',
+    'AI2Bot',
+    'AI2Bot-Dolma',
+    'DeepSeek-AI',
+    'PanguBot',
+    'Diffbot',
   ],
   search: [
-    'OAI-SearchBot', 'ChatGPT-User', 'Claude-SearchBot', 'Claude-User',
-    'PerplexityBot', 'Perplexity-User', 'DuckAssistBot', 'YouBot',
-    'Petalbot', 'Google-CloudVertexBot', 'Gemini',
+    'OAI-SearchBot',
+    'ChatGPT-User',
+    'Claude-SearchBot',
+    'Claude-User',
+    'PerplexityBot',
+    'Perplexity-User',
+    'DuckAssistBot',
+    'YouBot',
+    'Petalbot',
+    'Google-CloudVertexBot',
+    'Gemini',
   ],
-  fetching: [
-    'FirecrawlAgent', 'Facebookbot',
-  ],
+  fetching: ['FirecrawlAgent', 'Facebookbot'],
 };
 
-export const ALL_AI_CRAWLERS: string[] = [
-  ...AI_CRAWLERS.training,
-  ...AI_CRAWLERS.search,
-  ...AI_CRAWLERS.fetching,
-];
+export const ALL_AI_CRAWLERS: string[] = [...AI_CRAWLERS.training, ...AI_CRAWLERS.search, ...AI_CRAWLERS.fetching];
 
 export const CORE_AI_CRAWLERS: string[] = [
-  'GPTBot', 'ClaudeBot', 'ChatGPT-User', 'Claude-SearchBot',
-  'Google-Extended', 'PerplexityBot',
+  'GPTBot',
+  'ClaudeBot',
+  'ChatGPT-User',
+  'Claude-SearchBot',
+  'Google-Extended',
+  'PerplexityBot',
 ];
 
 export const CHECK_WEIGHTS: Record<string, number> = {
@@ -47,7 +65,7 @@ export const CHECK_WEIGHTS: Record<string, number> = {
   'agent-json': 10,
   'security-txt': 10,
   'meta-tags': 10,
-  'openapi': 10,
+  openapi: 10,
 };
 
 export const GRADES: Grade[] = [
