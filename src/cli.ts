@@ -14,7 +14,7 @@ export function cli(argv: string[]): void {
     .version(VERSION, '-v, --version')
     .argument('<urls...>', 'One or more URLs to audit (e.g., https://example.com)')
     .option('--json', 'Output results as JSON')
-    .option('--output <format>', 'Output format: terminal, json', 'terminal')
+    .option('--output <format>', 'Output format: terminal, json, html', 'terminal')
     .option('--checks <list>', 'Comma-separated list of checks to run')
     .option('--timeout <ms>', 'Per-request timeout in milliseconds', '10000')
     .option('--verbose', 'Show detailed request and check execution logs')
