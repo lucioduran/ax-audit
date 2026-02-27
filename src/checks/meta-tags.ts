@@ -37,10 +37,15 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: `${foundAiMeta.length}/${AI_META_NAMES.length} AI meta tags found`,
       detail: foundAiMeta.join(', '),
+      hint: 'Add more AI meta tags to your <head>: <meta name="ai:summary" content="...">, <meta name="ai:content_type" content="...">, <meta name="ai:author" content="...">, etc.',
     });
     score -= 15;
   } else {
-    findings.push({ status: 'warn', message: 'No AI meta tags (ai:*) found' });
+    findings.push({
+      status: 'warn',
+      message: 'No AI meta tags (ai:*) found',
+      hint: 'Add AI meta tags to your HTML <head>: <meta name="ai:summary" content="Brief description">, <meta name="ai:content_type" content="website">, <meta name="ai:author" content="Your Name">.',
+    });
     score -= 25;
   }
 
@@ -49,7 +54,11 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   if (hasLlmsAlternate) {
     findings.push({ status: 'pass', message: 'rel="alternate" link to llms.txt present' });
   } else {
-    findings.push({ status: 'warn', message: 'No rel="alternate" link to llms.txt in HTML' });
+    findings.push({
+      status: 'warn',
+      message: 'No rel="alternate" link to llms.txt in HTML',
+      hint: 'Add to your <head>: <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-optimized content">',
+    });
     score -= 15;
   }
 
@@ -58,7 +67,11 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   if (hasAgentAlternate) {
     findings.push({ status: 'pass', message: 'rel="alternate" link to agent.json present' });
   } else {
-    findings.push({ status: 'warn', message: 'No rel="alternate" link to agent.json in HTML' });
+    findings.push({
+      status: 'warn',
+      message: 'No rel="alternate" link to agent.json in HTML',
+      hint: 'Add to your <head>: <link rel="alternate" type="application/json" href="/.well-known/agent.json" title="Agent Card">',
+    });
     score -= 10;
   }
 
@@ -69,7 +82,11 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   } else if (relMeCount > 0) {
     findings.push({ status: 'pass', message: `${relMeCount} rel="me" identity link(s) found` });
   } else {
-    findings.push({ status: 'warn', message: 'No rel="me" identity links found' });
+    findings.push({
+      status: 'warn',
+      message: 'No rel="me" identity links found',
+      hint: 'Add rel="me" links to verify your identity across platforms: <link rel="me" href="https://github.com/yourname">, <link rel="me" href="https://twitter.com/yourname">.',
+    });
     score -= 10;
   }
 
@@ -77,7 +94,11 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   if (hasOg) {
     findings.push({ status: 'pass', message: 'OpenGraph meta tags present' });
   } else {
-    findings.push({ status: 'warn', message: 'No OpenGraph meta tags found' });
+    findings.push({
+      status: 'warn',
+      message: 'No OpenGraph meta tags found',
+      hint: 'Add OpenGraph meta tags for better social and AI sharing: <meta property="og:title" content="...">, <meta property="og:description" content="...">, <meta property="og:url" content="...">.',
+    });
     score -= 10;
   }
 

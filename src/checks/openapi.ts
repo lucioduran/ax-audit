@@ -20,6 +20,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'fail',
       message: '/.well-known/openapi.json not found',
       detail: `HTTP ${res.status || 'network error'}`,
+      hint: 'Create a /.well-known/openapi.json file with your API specification following the OpenAPI 3.x standard. See https://swagger.io/specification/ for the spec.',
     });
     return buildResult(meta, 0, findings, start);
   }
@@ -30,7 +31,11 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   try {
     data = JSON.parse(res.body);
   } catch {
-    findings.push({ status: 'fail', message: 'Invalid JSON' });
+    findings.push({
+      status: 'fail',
+      message: 'Invalid JSON',
+      hint: 'Fix the JSON syntax in your openapi.json file. Validate with a JSON linter.',
+    });
     return buildResult(meta, 10, findings, start);
   }
   findings.push({ status: 'pass', message: 'Valid JSON' });
@@ -38,10 +43,18 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   if (data.openapi) {
     findings.push({ status: 'pass', message: `OpenAPI version: ${data.openapi}` });
   } else if (data.swagger) {
-    findings.push({ status: 'warn', message: `Swagger version: ${data.swagger} (consider upgrading to OpenAPI 3.x)` });
+    findings.push({
+      status: 'warn',
+      message: `Swagger version: ${data.swagger} (consider upgrading to OpenAPI 3.x)`,
+      hint: 'Upgrade from Swagger 2.x to OpenAPI 3.x for better AI agent compatibility. Use https://editor.swagger.io/ to convert.',
+    });
     score -= 10;
   } else {
-    findings.push({ status: 'fail', message: 'No openapi or swagger version field' });
+    findings.push({
+      status: 'fail',
+      message: 'No openapi or swagger version field',
+      hint: 'Add "openapi": "3.1.0" to the root of your OpenAPI spec to declare the specification version.',
+    });
     score -= 20;
   }
 
@@ -49,14 +62,22 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   if (info?.title) {
     findings.push({ status: 'pass', message: `API title: "${info.title}"` });
   } else {
-    findings.push({ status: 'warn', message: 'Missing info.title' });
+    findings.push({
+      status: 'warn',
+      message: 'Missing info.title',
+      hint: 'Add an "info" object with a "title" field: "info": { "title": "Your API Name", "version": "1.0.0" }',
+    });
     score -= 10;
   }
 
   if (info?.description) {
     findings.push({ status: 'pass', message: 'API description present' });
   } else {
-    findings.push({ status: 'warn', message: 'Missing info.description' });
+    findings.push({
+      status: 'warn',
+      message: 'Missing info.description',
+      hint: 'Add a "description" field inside "info" explaining what your API does and how AI agents can use it.',
+    });
     score -= 5;
   }
 
@@ -64,14 +85,22 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   if (paths && Object.keys(paths).length > 0) {
     findings.push({ status: 'pass', message: `${Object.keys(paths).length} path(s) documented` });
   } else {
-    findings.push({ status: 'warn', message: 'No paths documented' });
+    findings.push({
+      status: 'warn',
+      message: 'No paths documented',
+      hint: 'Add a "paths" object documenting your API endpoints with their methods, parameters, and responses.',
+    });
     score -= 15;
   }
 
   if (Array.isArray(data.servers) && data.servers.length > 0) {
     findings.push({ status: 'pass', message: `${data.servers.length} server(s) defined` });
   } else {
-    findings.push({ status: 'warn', message: 'No servers defined' });
+    findings.push({
+      status: 'warn',
+      message: 'No servers defined',
+      hint: 'Add a "servers" array with your API base URL: "servers": [{ "url": "https://api.example.com" }]',
+    });
     score -= 5;
   }
 

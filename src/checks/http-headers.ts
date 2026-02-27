@@ -12,14 +12,12 @@ export function parseLinkHeader(header: string): LinkEntry[] {
   if (!header) return [];
 
   const entries: LinkEntry[] = [];
-  // Split on commas that are outside angle brackets and quoted strings
   const parts = splitLinkHeader(header);
 
   for (const part of parts) {
     const trimmed = part.trim();
     if (!trimmed) continue;
 
-    // Extract URL from <...>
     const urlMatch = trimmed.match(/^<([^>]*)>/);
     if (!urlMatch) continue;
 
@@ -27,7 +25,6 @@ export function parseLinkHeader(header: string): LinkEntry[] {
     const rest = trimmed.slice(urlMatch[0].length);
     const params: Record<string, string> = {};
 
-    // Parse ; key="value" or ; key=value pairs
     const paramRegex = /;\s*([^=\s]+)\s*=\s*(?:"([^"]*)"|([^\s;,]*))/g;
     let match;
     while ((match = paramRegex.exec(rest)) !== null) {
@@ -97,7 +94,11 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     if (headers[header.name]) {
       securityCount++;
     } else if (header.critical) {
-      findings.push({ status: 'fail', message: `Missing critical header: ${header.label}` });
+      findings.push({
+        status: 'fail',
+        message: `Missing critical header: ${header.label}`,
+        hint: `Add the ${header.label} response header to your server configuration. This is a critical security header.`,
+      });
       score -= 10;
     }
   }
@@ -110,6 +111,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     findings.push({
       status: 'warn',
       message: `Only ${securityCount}/${SECURITY_HEADERS.length} security headers present`,
+      hint: 'Add security headers like Strict-Transport-Security, X-Content-Type-Options, X-Frame-Options, and Referrer-Policy to your server response.',
     });
     score -= 5;
   }
@@ -123,17 +125,33 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     findings.push({ status: 'pass', message: 'Link header references both llms.txt and agent.json' });
   } else if (hasLlmsLink) {
     findings.push({ status: 'pass', message: 'Link header references llms.txt' });
-    findings.push({ status: 'warn', message: 'Link header does not reference agent.json' });
+    findings.push({
+      status: 'warn',
+      message: 'Link header does not reference agent.json',
+      hint: 'Add agent.json to your Link header: Link: </.well-known/agent.json>; rel="alternate"; type="application/json"',
+    });
     score -= 5;
   } else if (hasAgentLink) {
     findings.push({ status: 'pass', message: 'Link header references agent.json' });
-    findings.push({ status: 'warn', message: 'Link header does not reference llms.txt' });
+    findings.push({
+      status: 'warn',
+      message: 'Link header does not reference llms.txt',
+      hint: 'Add llms.txt to your Link header: Link: </llms.txt>; rel="alternate"; type="text/plain"',
+    });
     score -= 5;
   } else if (linkHeader) {
-    findings.push({ status: 'warn', message: 'Link header present but does not reference AI discovery files' });
+    findings.push({
+      status: 'warn',
+      message: 'Link header present but does not reference AI discovery files',
+      hint: 'Add AI discovery entries to your Link header: Link: </llms.txt>; rel="alternate"; type="text/plain", </.well-known/agent.json>; rel="alternate"; type="application/json"',
+    });
     score -= 15;
   } else {
-    findings.push({ status: 'warn', message: 'No Link header for AI discovery (llms.txt, agent.json)' });
+    findings.push({
+      status: 'warn',
+      message: 'No Link header for AI discovery (llms.txt, agent.json)',
+      hint: 'Add a Link response header pointing to your AI discovery files: Link: </llms.txt>; rel="alternate"; type="text/plain", </.well-known/agent.json>; rel="alternate"; type="application/json"',
+    });
     score -= 15;
   }
 
@@ -143,7 +161,11 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     if (cors) {
       findings.push({ status: 'pass', message: 'CORS enabled on .well-known resources' });
     } else {
-      findings.push({ status: 'warn', message: 'No CORS headers on .well-known resources' });
+      findings.push({
+        status: 'warn',
+        message: 'No CORS headers on .well-known resources',
+        hint: 'Add Access-Control-Allow-Origin: * to responses from /.well-known/* so AI agents from other domains can fetch your discovery files.',
+      });
       score -= 10;
     }
   }
