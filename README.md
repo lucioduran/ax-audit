@@ -36,7 +36,7 @@ AI agents and LLMs are increasingly crawling, indexing, and interacting with web
 | Check | What it audits | Weight |
 |---|---|---|
 | **LLMs.txt** | `/llms.txt` presence and [llmstxt.org](https://llmstxt.org) spec compliance | 15% |
-| **Robots.txt** | AI crawler configuration (GPTBot, ClaudeBot, Google-Extended, etc.) | 15% |
+| **Robots.txt** | AI crawler configuration, wildcard detection, partial path restrictions | 15% |
 | **Structured Data** | JSON-LD on homepage (schema.org, `@graph`, entity types) | 15% |
 | **HTTP Headers** | Security headers + AI discovery `Link` headers + CORS on `.well-known` | 15% |
 | **Agent Card** | `/.well-known/agent.json` [A2A protocol](https://a2a-protocol.org) compliance | 10% |
@@ -70,6 +70,9 @@ ax-audit https://example.com --checks llms-txt,robots-txt,agent-json
 
 # Custom timeout per request (default: 10s)
 ax-audit https://example.com --timeout 15000
+
+# Verbose mode — see every HTTP request, cache hit, and check score
+ax-audit https://example.com --verbose
 ```
 
 ## Programmatic API
@@ -133,6 +136,14 @@ Save the report as an artifact:
 | `security-txt` | RFC 9116 Security.txt |
 | `meta-tags` | AI meta tags and identity links |
 | `openapi` | OpenAPI specification |
+
+## Testing
+
+```bash
+npm test
+```
+
+86 tests covering all 8 checks, the scorer, and edge cases. Uses Node.js built-in test runner (`node:test`), no extra test dependencies.
 
 ## Tech Stack
 
