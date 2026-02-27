@@ -66,7 +66,7 @@ ax-audit https://example.com
 # JSON output for CI/CD pipelines
 ax-audit https://example.com --json
 
-# Run only specific checks
+# Run only specific checks (validates IDs, errors on unknown)
 ax-audit https://example.com --checks llms-txt,robots-txt,agent-json
 
 # Custom timeout per request (default: 10s)
