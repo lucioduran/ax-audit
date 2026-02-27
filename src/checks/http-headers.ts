@@ -6,7 +6,7 @@ export const meta: CheckMeta = {
   id: 'http-headers',
   name: 'HTTP Headers',
   description: 'Checks security headers, AI discovery Link headers, and CORS',
-  weight: 15,
+  weight: 13,
 };
 
 export default async function check(ctx: CheckContext): Promise<CheckResult> {

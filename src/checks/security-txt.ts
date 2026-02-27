@@ -6,7 +6,7 @@ export const meta: CheckMeta = {
   id: 'security-txt',
   name: 'Security.txt',
   description: 'Checks /.well-known/security.txt RFC 9116 compliance',
-  weight: 10,
+  weight: 8,
 };
 
 export default async function check(ctx: CheckContext): Promise<CheckResult> {

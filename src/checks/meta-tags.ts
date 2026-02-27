@@ -5,7 +5,7 @@ export const meta: CheckMeta = {
   id: 'meta-tags',
   name: 'Meta Tags',
   description: 'Checks AI meta tags, rel="alternate", and rel="me" links',
-  weight: 10,
+  weight: 8,
 };
 
 const AI_META_NAMES = ['ai:summary', 'ai:content_type', 'ai:author', 'ai:api', 'ai:agent_card'];

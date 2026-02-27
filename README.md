@@ -38,12 +38,13 @@ AI agents and LLMs are increasingly crawling, indexing, and interacting with web
 |---|---|---|
 | **LLMs.txt** | `/llms.txt` presence and [llmstxt.org](https://llmstxt.org) spec compliance | 15% |
 | **Robots.txt** | AI crawler configuration, wildcard detection, partial path restrictions | 15% |
-| **Structured Data** | JSON-LD on homepage (schema.org, `@graph`, entity types) | 15% |
-| **HTTP Headers** | Security headers + AI discovery `Link` headers + CORS on `.well-known` | 15% |
+| **Structured Data** | JSON-LD on homepage (schema.org, `@graph`, entity types) | 13% |
+| **HTTP Headers** | Security headers + AI discovery `Link` headers + CORS on `.well-known` | 13% |
 | **Agent Card** | `/.well-known/agent.json` [A2A protocol](https://a2a-protocol.org) compliance | 10% |
-| **Security.txt** | `/.well-known/security.txt` [RFC 9116](https://www.rfc-editor.org/rfc/rfc9116) compliance | 10% |
-| **Meta Tags** | AI meta tags (`ai:*`), `rel="alternate"` to llms.txt, `rel="me"` identity links | 10% |
-| **OpenAPI** | `/.well-known/openapi.json` presence and schema validity | 10% |
+| **MCP** | `/.well-known/mcp.json` [Model Context Protocol](https://modelcontextprotocol.io) server config | 10% |
+| **Security.txt** | `/.well-known/security.txt` [RFC 9116](https://www.rfc-editor.org/rfc/rfc9116) compliance | 8% |
+| **Meta Tags** | AI meta tags (`ai:*`), `rel="alternate"` to llms.txt, `rel="me"` identity links | 8% |
+| **OpenAPI** | `/.well-known/openapi.json` presence and schema validity | 8% |
 
 ## Install
 
@@ -137,6 +138,7 @@ Save the report as an artifact:
 | `structured-data` | JSON-LD structured data |
 | `http-headers` | Security + AI discovery headers |
 | `agent-json` | A2A Agent Card |
+| `mcp` | MCP server configuration |
 | `security-txt` | RFC 9116 Security.txt |
 | `meta-tags` | AI meta tags and identity links |
 | `openapi` | OpenAPI specification |
@@ -147,7 +149,7 @@ Save the report as an artifact:
 npm test
 ```
 
-86 tests covering all 8 checks, the scorer, and edge cases. Uses Node.js built-in test runner (`node:test`), no extra test dependencies.
+95 tests covering all 9 checks, the scorer, and edge cases. Uses Node.js built-in test runner (`node:test`), no extra test dependencies.
 
 ## Tech Stack
 
