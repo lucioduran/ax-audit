@@ -11,6 +11,8 @@ export const meta: CheckMeta = {
 interface BotEntry {
   name: string;
   disallowed: boolean;
+  hasRestrictions: boolean;
+  hasAllow: boolean;
 }
 
 export default async function check(ctx: CheckContext): Promise<CheckResult> {
@@ -28,6 +30,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   findings.push({ status: 'pass', message: '/robots.txt exists' });
   const text = res.body;
   const configuredBots = parseUserAgents(text);
+  const wildcardEntry = configuredBots.find(b => b.name === '*');
 
   const coreConfigured = CORE_AI_CRAWLERS.filter(bot =>
     configuredBots.some(b => b.name.toLowerCase() === bot.toLowerCase())
@@ -46,12 +49,31 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     score -= 40;
   }
 
+  // Check wildcard blocking unconfigured AI crawlers
+  if (wildcardEntry?.disallowed) {
+    const blockedByWildcard = CORE_AI_CRAWLERS.filter(bot =>
+      !configuredBots.some(b => b.name.toLowerCase() === bot.toLowerCase())
+    );
+    if (blockedByWildcard.length > 0) {
+      findings.push({ status: 'warn', message: `${blockedByWildcard.length} core AI crawler(s) blocked via wildcard User-agent: *`, detail: blockedByWildcard.join(', ') });
+      score -= blockedByWildcard.length * 5;
+    }
+  }
+
   const blockedBots = configuredBots.filter(b =>
-    ALL_AI_CRAWLERS.some(ai => ai.toLowerCase() === b.name.toLowerCase()) && b.disallowed
+    b.name !== '*' && ALL_AI_CRAWLERS.some(ai => ai.toLowerCase() === b.name.toLowerCase()) && b.disallowed
   );
   if (blockedBots.length > 0) {
     findings.push({ status: 'warn', message: `${blockedBots.length} AI crawler(s) explicitly blocked`, detail: blockedBots.map(b => b.name).join(', ') });
     score -= blockedBots.length * 3;
+  }
+
+  // Check partial restrictions (Disallow on specific paths, not full block)
+  const restrictedBots = configuredBots.filter(b =>
+    b.name !== '*' && ALL_AI_CRAWLERS.some(ai => ai.toLowerCase() === b.name.toLowerCase()) && b.hasRestrictions && !b.disallowed
+  );
+  if (restrictedBots.length > 0) {
+    findings.push({ status: 'warn', message: `${restrictedBots.length} AI crawler(s) have partial path restrictions`, detail: restrictedBots.map(b => b.name).join(', ') });
   }
 
   if (/^Sitemap:/mi.test(text)) {
@@ -73,19 +95,45 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
 }
 
 function parseUserAgents(text: string): BotEntry[] {
-  const blocks: BotEntry[] = [];
-  let current: BotEntry | null = null;
+  const entries: BotEntry[] = [];
+  let currentGroup: BotEntry[] = [];
+  let inDirectives = false;
+
   for (const line of text.split('\n')) {
     const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
     const uaMatch = trimmed.match(/^User-agent:\s*(.+)/i);
     if (uaMatch) {
-      current = { name: uaMatch[1].trim(), disallowed: false };
-      blocks.push(current);
-    } else if (current && /^Disallow:\s*\/\s*$/i.test(trimmed)) {
-      current.disallowed = true;
+      if (inDirectives) {
+        currentGroup = [];
+        inDirectives = false;
+      }
+      const entry: BotEntry = { name: uaMatch[1].trim(), disallowed: false, hasRestrictions: false, hasAllow: false };
+      currentGroup.push(entry);
+      entries.push(entry);
+    } else if (/^Disallow:\s*\/\s*$/i.test(trimmed)) {
+      inDirectives = true;
+      for (const entry of currentGroup) {
+        entry.disallowed = true;
+        entry.hasRestrictions = true;
+      }
+    } else if (/^Disallow:\s*\/.+/i.test(trimmed)) {
+      inDirectives = true;
+      for (const entry of currentGroup) {
+        entry.hasRestrictions = true;
+      }
+    } else if (/^Allow:/i.test(trimmed)) {
+      inDirectives = true;
+      for (const entry of currentGroup) {
+        entry.hasAllow = true;
+      }
+    } else if (/^(Sitemap|Crawl-delay|Host):/i.test(trimmed)) {
+      inDirectives = true;
     }
   }
-  return blocks;
+
+  return entries;
 }
 
 function build(score: number, findings: Finding[], start: number): CheckResult {
