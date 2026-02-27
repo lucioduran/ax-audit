@@ -152,7 +152,7 @@ Save the report as an artifact:
 npm test
 ```
 
-95 tests covering all 9 checks, the scorer, and edge cases. Uses Node.js built-in test runner (`node:test`), no extra test dependencies.
+98 tests covering all 9 checks, the scorer, and edge cases. Uses Node.js built-in test runner (`node:test`), no extra test dependencies.
 
 ## Tech Stack
 

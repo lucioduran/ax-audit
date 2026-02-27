@@ -45,10 +45,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     return buildResult(meta, 10, findings, start);
   }
 
-  const hasContext = parsed.some((d) => {
-    const c = d['@context'];
-    return c && (c === 'https://schema.org' || c === 'https://schema.org/' || c === 'http://schema.org');
-  });
+  const hasContext = parsed.some((d) => isSchemaOrgContext(d['@context']));
   if (hasContext) {
     findings.push({ status: 'pass', message: '@context references schema.org' });
   } else {
@@ -107,17 +104,46 @@ function unescapeHtml(str: string): string {
     .replace(/&#x2F;/g, '/');
 }
 
-function collectTypes(obj: unknown, types: Set<string>): void {
-  if (!obj || typeof obj !== 'object') return;
+function isSchemaOrgContext(context: unknown): boolean {
+  if (typeof context === 'string') {
+    return /^https?:\/\/schema\.org\/?$/.test(context);
+  }
+  if (Array.isArray(context)) {
+    return context.some((item) => isSchemaOrgContext(item));
+  }
+  if (context && typeof context === 'object') {
+    const record = context as Record<string, unknown>;
+    if (typeof record['@vocab'] === 'string') {
+      return /^https?:\/\/schema\.org\/?$/.test(record['@vocab']);
+    }
+  }
+  return false;
+}
+
+function collectTypes(obj: unknown, types: Set<string>, depth = 0): void {
+  if (!obj || typeof obj !== 'object' || depth > 10) return;
+
+  if (Array.isArray(obj)) {
+    obj.forEach((item) => collectTypes(item, types, depth + 1));
+    return;
+  }
+
   const record = obj as Record<string, unknown>;
   if (record['@type']) {
     const t = Array.isArray(record['@type']) ? (record['@type'] as string[]) : [record['@type'] as string];
     t.forEach((type) => types.add(type));
   }
+
+  // Recurse into @graph
   if (Array.isArray(record['@graph'])) {
-    (record['@graph'] as unknown[]).forEach((item) => collectTypes(item, types));
+    (record['@graph'] as unknown[]).forEach((item) => collectTypes(item, types, depth + 1));
   }
-  if (Array.isArray(obj)) {
-    (obj as unknown[]).forEach((item) => collectTypes(item, types));
+
+  // Recurse into nested objects (author, publisher, mainEntity, etc.)
+  for (const [key, value] of Object.entries(record)) {
+    if (key.startsWith('@')) continue;
+    if (value && typeof value === 'object') {
+      collectTypes(value, types, depth + 1);
+    }
   }
 }
