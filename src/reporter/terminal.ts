@@ -48,6 +48,13 @@ export function reportTerminal(report: AuditReport): void {
     console.log();
   }
 
+  if (report.overallScore < 100) {
+    console.log(chalk.dim('  ──────────────────────────────────────'));
+    console.log();
+    console.log(`  Generate missing files: ${chalk.cyan('npx ax-init')}`);
+    console.log();
+  }
+
   console.log(chalk.dim('  Powered by ax-audit \u2014 Lighthouse for AI Agents'));
   console.log();
 }
