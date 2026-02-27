@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import check from '../../dist/checks/http-headers.js';
+import check, { parseLinkHeader } from '../../dist/checks/http-headers.js';
 import { mockContext, mockResponse } from '../helpers.js';
 
 describe('http-headers', () => {
@@ -138,5 +138,72 @@ describe('http-headers', () => {
     const result = await check(ctx);
     assert.ok(result.score >= 0);
     assert.ok(result.score <= 100);
+  });
+
+  it('should not false-match llms.txt in non-URL parts of Link header', async () => {
+    const headers = {
+      'strict-transport-security': 'max-age=31536000',
+      'x-content-type-options': 'nosniff',
+      'link': '<https://example.com/style.css>; rel="alternate"; title="llms.txt info"',
+    };
+    const ctx = mockContext(
+      { '/agent.json': mockResponse({ ok: false, status: 404 }) },
+      { headers },
+    );
+    const result = await check(ctx);
+    assert.ok(result.findings.some(f => f.status === 'warn' && f.message.includes('does not reference AI')));
+  });
+});
+
+describe('parseLinkHeader', () => {
+  it('should return empty array for empty string', () => {
+    assert.deepEqual(parseLinkHeader(''), []);
+  });
+
+  it('should parse a single Link entry', () => {
+    const links = parseLinkHeader('<https://example.com/llms.txt>; rel="alternate"');
+    assert.equal(links.length, 1);
+    assert.equal(links[0].url, 'https://example.com/llms.txt');
+    assert.equal(links[0].params.rel, 'alternate');
+  });
+
+  it('should parse multiple comma-separated entries', () => {
+    const header = '<https://example.com/llms.txt>; rel="alternate", <https://example.com/agent.json>; rel="describedby"';
+    const links = parseLinkHeader(header);
+    assert.equal(links.length, 2);
+    assert.equal(links[0].url, 'https://example.com/llms.txt');
+    assert.equal(links[1].url, 'https://example.com/agent.json');
+    assert.equal(links[1].params.rel, 'describedby');
+  });
+
+  it('should handle URLs with commas inside angle brackets', () => {
+    const header = '<https://example.com/path?a=1,b=2>; rel="alternate", <https://other.com>; rel="next"';
+    const links = parseLinkHeader(header);
+    assert.equal(links.length, 2);
+    assert.equal(links[0].url, 'https://example.com/path?a=1,b=2');
+    assert.equal(links[1].url, 'https://other.com');
+  });
+
+  it('should handle multiple parameters', () => {
+    const header = '<https://example.com/llms.txt>; rel="alternate"; type="text/plain"; title="LLM context"';
+    const links = parseLinkHeader(header);
+    assert.equal(links.length, 1);
+    assert.equal(links[0].params.rel, 'alternate');
+    assert.equal(links[0].params.type, 'text/plain');
+    assert.equal(links[0].params.title, 'LLM context');
+  });
+
+  it('should handle unquoted parameter values', () => {
+    const header = '<https://example.com/api>; rel=preload';
+    const links = parseLinkHeader(header);
+    assert.equal(links.length, 1);
+    assert.equal(links[0].params.rel, 'preload');
+  });
+
+  it('should skip entries without angle-bracket URLs', () => {
+    const header = 'https://example.com/bad; rel="alternate", <https://example.com/good>; rel="next"';
+    const links = parseLinkHeader(header);
+    assert.equal(links.length, 1);
+    assert.equal(links[0].url, 'https://example.com/good');
   });
 });
