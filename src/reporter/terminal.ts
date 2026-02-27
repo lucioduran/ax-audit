@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import { GRADES } from '../constants.js';
-import type { AuditReport, Grade } from '../types.js';
+import type { AuditReport, BatchAuditReport, Grade } from '../types.js';
 
 const STATUS_ICONS: Record<string, string> = {
   pass: chalk.green('  PASS '),
@@ -46,5 +46,51 @@ export function reportTerminal(report: AuditReport): void {
   }
 
   console.log(chalk.dim('  Powered by ax-audit \u2014 Lighthouse for AI Agents'));
+  console.log();
+}
+
+export function reportBatchTerminal(batch: BatchAuditReport): void {
+  for (const r of batch.reports) {
+    reportTerminal(r);
+  }
+
+  const { summary } = batch;
+  const grade = summary.grade;
+  const colorFn = gradeColor(grade);
+
+  console.log(chalk.bold('  ═══ Batch Summary ═══'));
+  console.log();
+
+  const colUrl = 40;
+  const colScore = 10;
+  const colGrade = 12;
+  console.log(chalk.dim('  ' + 'URL'.padEnd(colUrl) + 'Score'.padStart(colScore) + 'Grade'.padStart(colGrade)));
+  console.log(chalk.dim('  ' + '─'.repeat(colUrl + colScore + colGrade)));
+
+  for (const r of batch.reports) {
+    const rGrade = GRADES.find((g) => r.overallScore >= g.min) || GRADES[GRADES.length - 1];
+    const rColor = gradeColor(rGrade);
+    const shortUrl = r.url.length > colUrl - 2 ? r.url.slice(0, colUrl - 5) + '...' : r.url;
+    console.log(
+      '  ' +
+        shortUrl.padEnd(colUrl) +
+        rColor.bold(`${r.overallScore}/100`.padStart(colScore)) +
+        rColor(rGrade.label.padStart(colGrade)),
+    );
+  }
+
+  console.log();
+  console.log(
+    `  ${summary.total} URLs audited: ${chalk.green(`${summary.passed} passed`)}` +
+      (summary.failed > 0 ? `, ${chalk.red(`${summary.failed} failed`)}` : ''),
+  );
+
+  const barWidth = 40;
+  const filled = Math.round((summary.averageScore / 100) * barWidth);
+  const empty = barWidth - filled;
+  console.log(
+    `  ${colorFn('\u2588'.repeat(filled))}${chalk.gray('\u2591'.repeat(empty))}  ${colorFn.bold(summary.averageScore + '/100')} avg  ${colorFn(grade.label)}`,
+  );
+  console.log(chalk.dim(`  Total duration: ${batch.duration}ms`));
   console.log();
 }

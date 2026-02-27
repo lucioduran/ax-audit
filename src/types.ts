@@ -65,6 +65,18 @@ export interface AuditOptions {
   verbose?: boolean;
 }
 
+export interface BatchAuditReport {
+  reports: AuditReport[];
+  summary: {
+    total: number;
+    passed: number;
+    failed: number;
+    averageScore: number;
+    grade: Grade;
+  };
+  duration: number;
+}
+
 export interface SecurityHeader {
   name: string;
   label: string;

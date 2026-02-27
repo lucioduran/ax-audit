@@ -64,6 +64,9 @@ npx ax-audit https://your-site.com
 # Full audit with colored terminal output
 ax-audit https://example.com
 
+# Batch audit — audit multiple URLs in a single run
+ax-audit https://example.com https://other-site.com https://third.dev
+
 # JSON output for CI/CD pipelines
 ax-audit https://example.com --json
 
@@ -80,19 +83,45 @@ ax-audit https://example.com --verbose
 ax-audit https://example.com --only-failures
 ```
 
+### Batch Mode
+
+Pass multiple URLs to audit them sequentially. Each gets its own full report, followed by a summary table:
+
+```
+  ═══ Batch Summary ═══
+
+  URL                                     Score       Grade
+  ────────────────────────────────────────────────────────────
+  https://example.com                     92/100    Excellent
+  https://other-site.com                  45/100         Poor
+
+  2 URLs audited: 1 passed, 1 failed
+  ████████████████████████████░░░░░░░░░░░░  69/100 avg  Fair
+```
+
+Exit code: `0` if all URLs score >= 70, `1` if any fails.
+
 ## Programmatic API
 
 Full TypeScript support with all types exported.
 
 ```typescript
-import { audit } from 'ax-audit';
-import type { AuditReport, AuditOptions, CheckResult, Finding, Grade } from 'ax-audit';
+import { audit, batchAudit } from 'ax-audit';
+import type { AuditReport, BatchAuditReport } from 'ax-audit';
 
+// Single URL
 const report: AuditReport = await audit({ url: 'https://example.com' });
-
 console.log(report.overallScore); // 0-100
 console.log(report.grade.label);  // 'Excellent' | 'Good' | 'Fair' | 'Poor'
 console.log(report.results);      // Individual check results with findings
+
+// Batch audit
+const batch: BatchAuditReport = await batchAudit(
+  ['https://example.com', 'https://other.com'],
+  { timeout: 10000 }
+);
+console.log(batch.summary.averageScore); // Average across all URLs
+console.log(batch.summary.passed);       // Number of URLs scoring >= 70
 ```
 
 Also exports `calculateOverallScore`, `getGrade`, and `checks` for advanced usage.
@@ -152,7 +181,7 @@ Save the report as an artifact:
 npm test
 ```
 
-98 tests covering all 9 checks, the scorer, and edge cases. Uses Node.js built-in test runner (`node:test`), no extra test dependencies.
+97 tests covering all 9 checks, the scorer, and edge cases. Uses Node.js built-in test runner (`node:test`), no extra test dependencies.
 
 ## Tech Stack
 

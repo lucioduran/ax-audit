@@ -1,8 +1,9 @@
 import { Command } from 'commander';
-import { audit } from './orchestrator.js';
-import { report } from './reporter/index.js';
+import { audit, batchAudit } from './orchestrator.js';
+import { report, reportBatch } from './reporter/index.js';
 import { VERSION } from './constants.js';
 import { checks as allChecks } from './checks/index.js';
+import type { AuditReport } from './types.js';
 
 export function cli(argv: string[]): void {
   const program = new Command();
@@ -11,7 +12,7 @@ export function cli(argv: string[]): void {
     .name('ax-audit')
     .description('Audit websites for AI Agent Experience (AX) readiness. Lighthouse for AI Agents.')
     .version(VERSION, '-v, --version')
-    .argument('<url>', 'URL to audit (e.g., https://example.com)')
+    .argument('<urls...>', 'One or more URLs to audit (e.g., https://example.com)')
     .option('--json', 'Output results as JSON')
     .option('--output <format>', 'Output format: terminal, json', 'terminal')
     .option('--checks <list>', 'Comma-separated list of checks to run')
@@ -20,7 +21,7 @@ export function cli(argv: string[]): void {
     .option('--only-failures', 'Only show checks/findings with failures or warnings')
     .action(
       async (
-        url: string,
+        urls: string[],
         options: {
           json?: boolean;
           output: string;
@@ -30,11 +31,13 @@ export function cli(argv: string[]): void {
           onlyFailures?: boolean;
         },
       ) => {
-        try {
-          new URL(url);
-        } catch {
-          console.error(`Error: Invalid URL "${url}". Provide a full URL like https://example.com`);
-          process.exit(1);
+        for (const url of urls) {
+          try {
+            new URL(url);
+          } catch {
+            console.error(`Error: Invalid URL "${url}". Provide a full URL like https://example.com`);
+            process.exit(1);
+          }
         }
 
         const format = options.json ? 'json' : options.output;
@@ -50,28 +53,26 @@ export function cli(argv: string[]): void {
           }
         }
 
+        const baseOptions = {
+          checks,
+          timeout: parseInt(options.timeout, 10),
+          verbose: options.verbose,
+        };
+
         try {
-          const result = await audit({
-            url,
-            checks,
-            timeout: parseInt(options.timeout, 10),
-            verbose: options.verbose,
-          });
-
-          const output = options.onlyFailures
-            ? {
-                ...result,
-                results: result.results
-                  .map((c) => ({
-                    ...c,
-                    findings: c.findings.filter((f) => f.status !== 'pass'),
-                  }))
-                  .filter((c) => c.findings.length > 0),
-              }
-            : result;
-
-          report(output, format);
-          process.exit(result.overallScore >= 70 ? 0 : 1);
+          if (urls.length === 1) {
+            const result = await audit({ ...baseOptions, url: urls[0] });
+            const output = applyOnlyFailures(result, options.onlyFailures);
+            report(output, format);
+            process.exit(result.overallScore >= 70 ? 0 : 1);
+          } else {
+            const batch = await batchAudit(urls, baseOptions);
+            if (options.onlyFailures) {
+              batch.reports = batch.reports.map((r) => applyOnlyFailures(r, true));
+            }
+            reportBatch(batch, format);
+            process.exit(batch.summary.failed === 0 ? 0 : 1);
+          }
         } catch (err: unknown) {
           const error = err as Error;
           console.error(`Fatal: ${error.message}`);
@@ -81,4 +82,17 @@ export function cli(argv: string[]): void {
     );
 
   program.parse(argv);
+}
+
+function applyOnlyFailures(result: AuditReport, onlyFailures?: boolean): AuditReport {
+  if (!onlyFailures) return result;
+  return {
+    ...result,
+    results: result.results
+      .map((c) => ({
+        ...c,
+        findings: c.findings.filter((f) => f.status !== 'pass'),
+      }))
+      .filter((c) => c.findings.length > 0),
+  };
 }
