@@ -68,7 +68,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     findings.push({ status: 'warn', message: '/llms-full.txt not found (optional but recommended)' });
   }
 
-  return build(Math.max(0, score), findings, start);
+  return build(Math.max(0, Math.min(100, score)), findings, start);
 }
 
 function build(score: number, findings: Finding[], start: number): CheckResult {
