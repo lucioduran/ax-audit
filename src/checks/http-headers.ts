@@ -1,24 +1,24 @@
 import { SECURITY_HEADERS } from '../constants.js';
+import type { CheckContext, CheckResult, CheckMeta, Finding } from '../types.js';
 
-export const meta = {
+export const meta: CheckMeta = {
   id: 'http-headers',
   name: 'HTTP Headers',
   description: 'Checks security headers, AI discovery Link headers, and CORS',
   weight: 15,
 };
 
-export default async function check(ctx) {
+export default async function check(ctx: CheckContext): Promise<CheckResult> {
   const start = performance.now();
-  const findings = [];
+  const findings: Finding[] = [];
   let score = 100;
 
   const headers = ctx.headers;
   if (!headers || Object.keys(headers).length === 0) {
     findings.push({ status: 'fail', message: 'Could not fetch homepage headers' });
-    return result(0, findings, start);
+    return build(0, findings, start);
   }
 
-  // Security headers
   let securityCount = 0;
   for (const header of SECURITY_HEADERS) {
     if (headers[header.name]) {
@@ -38,7 +38,6 @@ export default async function check(ctx) {
     score -= 5;
   }
 
-  // Link header for AI discovery
   const linkHeader = headers['link'] || '';
   const hasLlmsLink = /llms\.txt/i.test(linkHeader);
   const hasAgentLink = /agent\.json/i.test(linkHeader);
@@ -61,11 +60,10 @@ export default async function check(ctx) {
     score -= 15;
   }
 
-  // CORS on .well-known
   const wellKnownRes = await ctx.fetch(`${ctx.url}/.well-known/agent.json`);
   if (wellKnownRes.ok) {
     const cors = wellKnownRes.headers['access-control-allow-origin'];
-    if (cors === '*' || cors) {
+    if (cors) {
       findings.push({ status: 'pass', message: 'CORS enabled on .well-known resources' });
     } else {
       findings.push({ status: 'warn', message: 'No CORS headers on .well-known resources' });
@@ -73,15 +71,14 @@ export default async function check(ctx) {
     }
   }
 
-  // X-Robots-Tag on AI files
   const llmsRes = await ctx.fetch(`${ctx.url}/llms.txt`);
   if (llmsRes.ok && llmsRes.headers['x-robots-tag']?.includes('noindex')) {
     findings.push({ status: 'pass', message: 'X-Robots-Tag: noindex on /llms.txt (prevents search indexing of raw text)' });
   }
 
-  return result(Math.max(0, score), findings, start);
+  return build(Math.max(0, score), findings, start);
 }
 
-function result(score, findings, start) {
+function build(score: number, findings: Finding[], start: number): CheckResult {
   return { id: meta.id, name: meta.name, description: meta.description, score, findings, duration: Math.round(performance.now() - start) };
 }

@@ -23,17 +23,22 @@
     "a2a",
     "seo",
     "cli",
-    "devtools"
+    "devtools",
+    "typescript"
   ],
   "bin": {
     "ax-audit": "./bin/ax-audit.js"
   },
   "exports": {
-    ".": "./lib/orchestrator.js"
+    ".": {
+      "types": "./dist/orchestrator.d.ts",
+      "default": "./dist/orchestrator.js"
+    }
   },
+  "types": "./dist/orchestrator.d.ts",
   "files": [
     "bin/",
-    "lib/",
+    "dist/",
     "LICENSE",
     "README.md"
   ],
@@ -41,12 +46,17 @@
     "node": ">=18.0.0"
   },
   "scripts": {
+    "build": "tsc",
     "start": "node bin/ax-audit.js",
     "test": "node --test test/**/*.test.js",
-    "prepublishOnly": "npm test"
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "chalk": "^5.4.1",
     "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.2",
+    "typescript": "^5.9.3"
   }
 }

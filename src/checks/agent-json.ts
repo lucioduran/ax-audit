@@ -1,37 +1,36 @@
 import { AGENT_JSON_REQUIRED_FIELDS } from '../constants.js';
+import type { CheckContext, CheckResult, CheckMeta, Finding } from '../types.js';
 
-export const meta = {
+export const meta: CheckMeta = {
   id: 'agent-json',
   name: 'Agent Card (A2A)',
   description: 'Checks /.well-known/agent.json A2A protocol compliance',
   weight: 10,
 };
 
-export default async function check(ctx) {
+export default async function check(ctx: CheckContext): Promise<CheckResult> {
   const start = performance.now();
-  const findings = [];
+  const findings: Finding[] = [];
   let score = 100;
 
   const res = await ctx.fetch(`${ctx.url}/.well-known/agent.json`);
 
   if (!res.ok) {
     findings.push({ status: 'fail', message: '/.well-known/agent.json not found', detail: `HTTP ${res.status || 'network error'}` });
-    return result(0, findings, start);
+    return build(0, findings, start);
   }
 
   findings.push({ status: 'pass', message: '/.well-known/agent.json exists' });
 
-  // Valid JSON
-  let data;
+  let data: Record<string, unknown>;
   try {
     data = JSON.parse(res.body);
   } catch {
     findings.push({ status: 'fail', message: 'Invalid JSON' });
-    return result(10, findings, start);
+    return build(10, findings, start);
   }
   findings.push({ status: 'pass', message: 'Valid JSON' });
 
-  // Required fields
   for (const field of AGENT_JSON_REQUIRED_FIELDS) {
     if (data[field] !== undefined && data[field] !== null) {
       findings.push({ status: 'pass', message: `Required field "${field}" present` });
@@ -41,7 +40,6 @@ export default async function check(ctx) {
     }
   }
 
-  // Skills array
   if (Array.isArray(data.skills) && data.skills.length > 0) {
     findings.push({ status: 'pass', message: `${data.skills.length} skill(s) defined` });
   } else if (Array.isArray(data.skills)) {
@@ -49,7 +47,6 @@ export default async function check(ctx) {
     score -= 10;
   }
 
-  // Protocol version
   if (data.protocolVersion) {
     findings.push({ status: 'pass', message: `Protocol version: ${data.protocolVersion}` });
   } else {
@@ -57,7 +54,6 @@ export default async function check(ctx) {
     score -= 5;
   }
 
-  // Optional valuable fields
   const optionalFields = ['capabilities', 'authentication', 'documentationUrl'];
   const presentOptional = optionalFields.filter(f => data[f] !== undefined);
   if (presentOptional.length === optionalFields.length) {
@@ -69,9 +65,9 @@ export default async function check(ctx) {
     score -= 5;
   }
 
-  return result(Math.max(0, score), findings, start);
+  return build(Math.max(0, score), findings, start);
 }
 
-function result(score, findings, start) {
+function build(score: number, findings: Finding[], start: number): CheckResult {
   return { id: meta.id, name: meta.name, description: meta.description, score, findings, duration: Math.round(performance.now() - start) };
 }

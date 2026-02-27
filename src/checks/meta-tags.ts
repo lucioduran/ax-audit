@@ -1,4 +1,6 @@
-export const meta = {
+import type { CheckContext, CheckResult, CheckMeta, Finding } from '../types.js';
+
+export const meta: CheckMeta = {
   id: 'meta-tags',
   name: 'Meta Tags',
   description: 'Checks AI meta tags, rel="alternate", and rel="me" links',
@@ -7,18 +9,17 @@ export const meta = {
 
 const AI_META_NAMES = ['ai:summary', 'ai:content_type', 'ai:author', 'ai:api', 'ai:agent_card'];
 
-export default async function check(ctx) {
+export default async function check(ctx: CheckContext): Promise<CheckResult> {
   const start = performance.now();
-  const findings = [];
+  const findings: Finding[] = [];
   let score = 100;
 
   const html = ctx.html;
   if (!html) {
     findings.push({ status: 'fail', message: 'Could not fetch homepage HTML' });
-    return result(0, findings, start);
+    return build(0, findings, start);
   }
 
-  // AI meta tags (ai:*)
   const foundAiMeta = AI_META_NAMES.filter(name => {
     const pattern = new RegExp(`<meta\\s+[^>]*name=["']${escapeRegex(name)}["'][^>]*>`, 'i');
     return pattern.test(html);
@@ -34,7 +35,6 @@ export default async function check(ctx) {
     score -= 25;
   }
 
-  // rel="alternate" to llms.txt
   const hasLlmsAlternate = /rel=["']alternate["'][^>]*llms\.txt/i.test(html) ||
     /llms\.txt[^>]*rel=["']alternate["']/i.test(html);
   if (hasLlmsAlternate) {
@@ -44,7 +44,6 @@ export default async function check(ctx) {
     score -= 15;
   }
 
-  // rel="alternate" to agent.json
   const hasAgentAlternate = /rel=["']alternate["'][^>]*agent\.json/i.test(html) ||
     /agent\.json[^>]*rel=["']alternate["']/i.test(html);
   if (hasAgentAlternate) {
@@ -54,7 +53,6 @@ export default async function check(ctx) {
     score -= 10;
   }
 
-  // rel="me" identity links
   const relMePattern = /rel=["']me["']/gi;
   const relMeCount = (html.match(relMePattern) || []).length;
   if (relMeCount >= 3) {
@@ -66,7 +64,6 @@ export default async function check(ctx) {
     score -= 10;
   }
 
-  // OpenGraph basics
   const hasOg = /<meta\s+[^>]*property=["']og:/i.test(html);
   if (hasOg) {
     findings.push({ status: 'pass', message: 'OpenGraph meta tags present' });
@@ -75,13 +72,13 @@ export default async function check(ctx) {
     score -= 10;
   }
 
-  return result(Math.max(0, score), findings, start);
+  return build(Math.max(0, score), findings, start);
 }
 
-function escapeRegex(str) {
+function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function result(score, findings, start) {
+function build(score: number, findings: Finding[], start: number): CheckResult {
   return { id: meta.id, name: meta.name, description: meta.description, score, findings, duration: Math.round(performance.now() - start) };
 }

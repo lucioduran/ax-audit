@@ -1,18 +1,20 @@
 import { USER_AGENT } from './constants.js';
+import type { FetchResponse } from './types.js';
 
-/**
- * Creates a fetch wrapper with in-memory caching, timeout, and custom user-agent.
- * @param {{ timeout?: number }} options
- */
-export function createFetcher({ timeout = 10000 } = {}) {
-  const cache = new Map();
+interface FetcherOptions {
+  timeout?: number;
+}
 
-  /**
-   * Fetch a URL with caching and timeout.
-   * Returns a normalized response object (never throws).
-   */
-  async function fetchUrl(url) {
-    if (cache.has(url)) return cache.get(url);
+interface Fetcher {
+  fetch: (url: string) => Promise<FetchResponse>;
+  fetchPage: (url: string) => Promise<FetchResponse>;
+}
+
+export function createFetcher({ timeout = 10000 }: FetcherOptions = {}): Fetcher {
+  const cache = new Map<string, FetchResponse>();
+
+  async function fetchUrl(url: string): Promise<FetchResponse> {
+    if (cache.has(url)) return cache.get(url)!;
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
@@ -29,12 +31,12 @@ export function createFetcher({ timeout = 10000 } = {}) {
 
       const body = await response.text();
 
-      const headers = {};
+      const headers: Record<string, string> = {};
       response.headers.forEach((value, key) => {
         headers[key.toLowerCase()] = value;
       });
 
-      const result = {
+      const result: FetchResponse = {
         status: response.status,
         headers,
         body,
@@ -44,14 +46,15 @@ export function createFetcher({ timeout = 10000 } = {}) {
 
       cache.set(url, result);
       return result;
-    } catch (err) {
-      const result = {
+    } catch (err: unknown) {
+      const error = err as Error & { name: string };
+      const result: FetchResponse = {
         status: 0,
         headers: {},
         body: '',
         ok: false,
         url,
-        error: err.name === 'AbortError' ? 'Request timed out' : err.message,
+        error: error.name === 'AbortError' ? 'Request timed out' : error.message,
       };
       cache.set(url, result);
       return result;

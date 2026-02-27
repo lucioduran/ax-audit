@@ -3,7 +3,7 @@ import { audit } from './orchestrator.js';
 import { report } from './reporter/index.js';
 import { VERSION } from './constants.js';
 
-export function cli(argv) {
+export function cli(argv: string[]): void {
   const program = new Command();
 
   program
@@ -15,8 +15,7 @@ export function cli(argv) {
     .option('--output <format>', 'Output format: terminal, json', 'terminal')
     .option('--checks <list>', 'Comma-separated list of checks to run')
     .option('--timeout <ms>', 'Per-request timeout in milliseconds', '10000')
-    .action(async (url, options) => {
-      // Validate URL
+    .action(async (url: string, options: { json?: boolean; output: string; checks?: string; timeout: string }) => {
       try {
         new URL(url);
       } catch {
@@ -37,11 +36,10 @@ export function cli(argv) {
         });
 
         report(result, format);
-
-        // Exit code: 0 for Good+, 1 for Fair/Poor
         process.exit(result.overallScore >= 70 ? 0 : 1);
-      } catch (err) {
-        console.error(`Fatal: ${err.message}`);
+      } catch (err: unknown) {
+        const error = err as Error;
+        console.error(`Fatal: ${error.message}`);
         process.exit(2);
       }
     });
