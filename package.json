@@ -1,0 +1,52 @@
+{
+  "name": "ax-audit",
+  "version": "1.0.0",
+  "description": "Audit websites for AI Agent Experience (AX) readiness. Lighthouse for AI Agents.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Lucio Duran <email@lucioduran.com> (https://lucioduran.com)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lucioduran/ax-audit.git"
+  },
+  "homepage": "https://github.com/lucioduran/ax-audit#readme",
+  "bugs": {
+    "url": "https://github.com/lucioduran/ax-audit/issues"
+  },
+  "keywords": [
+    "ax",
+    "ai",
+    "agent-experience",
+    "audit",
+    "lighthouse",
+    "llms-txt",
+    "a2a",
+    "seo",
+    "cli",
+    "devtools"
+  ],
+  "bin": {
+    "ax-audit": "./bin/ax-audit.js"
+  },
+  "exports": {
+    ".": "./lib/orchestrator.js"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node bin/ax-audit.js",
+    "test": "node --test test/**/*.test.js",
+    "prepublishOnly": "npm test"
+  },
+  "dependencies": {
+    "chalk": "^5.4.1",
+    "commander": "^13.1.0"
+  }
+}
