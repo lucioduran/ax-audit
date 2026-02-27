@@ -17,10 +17,18 @@ export function cli(argv: string[]): void {
     .option('--checks <list>', 'Comma-separated list of checks to run')
     .option('--timeout <ms>', 'Per-request timeout in milliseconds', '10000')
     .option('--verbose', 'Show detailed request and check execution logs')
+    .option('--only-failures', 'Only show checks/findings with failures or warnings')
     .action(
       async (
         url: string,
-        options: { json?: boolean; output: string; checks?: string; timeout: string; verbose?: boolean },
+        options: {
+          json?: boolean;
+          output: string;
+          checks?: string;
+          timeout: string;
+          verbose?: boolean;
+          onlyFailures?: boolean;
+        },
       ) => {
         try {
           new URL(url);
@@ -50,7 +58,19 @@ export function cli(argv: string[]): void {
             verbose: options.verbose,
           });
 
-          report(result, format);
+          const output = options.onlyFailures
+            ? {
+                ...result,
+                results: result.results
+                  .map((c) => ({
+                    ...c,
+                    findings: c.findings.filter((f) => f.status !== 'pass'),
+                  }))
+                  .filter((c) => c.findings.length > 0),
+              }
+            : result;
+
+          report(output, format);
           process.exit(result.overallScore >= 70 ? 0 : 1);
         } catch (err: unknown) {
           const error = err as Error;

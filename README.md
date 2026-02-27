@@ -75,6 +75,9 @@ ax-audit https://example.com --timeout 15000
 
 # Verbose mode — see every HTTP request, cache hit, and check score
 ax-audit https://example.com --verbose
+
+# Only show failures and warnings (hide passing findings)
+ax-audit https://example.com --only-failures
 ```
 
 ## Programmatic API
