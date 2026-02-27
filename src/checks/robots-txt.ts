@@ -1,29 +1,34 @@
 import { ALL_AI_CRAWLERS, CORE_AI_CRAWLERS } from '../constants.js';
+import type { CheckContext, CheckResult, CheckMeta, Finding } from '../types.js';
 
-export const meta = {
+export const meta: CheckMeta = {
   id: 'robots-txt',
   name: 'Robots.txt',
   description: 'Checks AI crawler configuration in robots.txt',
   weight: 15,
 };
 
-export default async function check(ctx) {
+interface BotEntry {
+  name: string;
+  disallowed: boolean;
+}
+
+export default async function check(ctx: CheckContext): Promise<CheckResult> {
   const start = performance.now();
-  const findings = [];
+  const findings: Finding[] = [];
   let score = 100;
 
   const res = await ctx.fetch(`${ctx.url}/robots.txt`);
 
   if (!res.ok) {
     findings.push({ status: 'fail', message: '/robots.txt not found' });
-    return result(0, findings, start);
+    return build(0, findings, start);
   }
 
   findings.push({ status: 'pass', message: '/robots.txt exists' });
   const text = res.body;
   const configuredBots = parseUserAgents(text);
 
-  // Core AI crawlers
   const coreConfigured = CORE_AI_CRAWLERS.filter(bot =>
     configuredBots.some(b => b.name.toLowerCase() === bot.toLowerCase())
   );
@@ -41,7 +46,6 @@ export default async function check(ctx) {
     score -= 40;
   }
 
-  // Blocked AI crawlers
   const blockedBots = configuredBots.filter(b =>
     ALL_AI_CRAWLERS.some(ai => ai.toLowerCase() === b.name.toLowerCase()) && b.disallowed
   );
@@ -50,7 +54,6 @@ export default async function check(ctx) {
     score -= blockedBots.length * 3;
   }
 
-  // Sitemap directive
   if (/^Sitemap:/mi.test(text)) {
     findings.push({ status: 'pass', message: 'Sitemap directive present' });
   } else {
@@ -58,7 +61,6 @@ export default async function check(ctx) {
     score -= 5;
   }
 
-  // Total AI crawler coverage
   const totalConfigured = ALL_AI_CRAWLERS.filter(bot =>
     configuredBots.some(b => b.name.toLowerCase() === bot.toLowerCase())
   );
@@ -67,12 +69,12 @@ export default async function check(ctx) {
     message: `${totalConfigured.length}/${ALL_AI_CRAWLERS.length} known AI crawlers have explicit rules`,
   });
 
-  return result(Math.max(0, Math.min(100, score)), findings, start);
+  return build(Math.max(0, Math.min(100, score)), findings, start);
 }
 
-function parseUserAgents(text) {
-  const blocks = [];
-  let current = null;
+function parseUserAgents(text: string): BotEntry[] {
+  const blocks: BotEntry[] = [];
+  let current: BotEntry | null = null;
   for (const line of text.split('\n')) {
     const trimmed = line.trim();
     const uaMatch = trimmed.match(/^User-agent:\s*(.+)/i);
@@ -86,6 +88,6 @@ function parseUserAgents(text) {
   return blocks;
 }
 
-function result(score, findings, start) {
+function build(score: number, findings: Finding[], start: number): CheckResult {
   return { id: meta.id, name: meta.name, description: meta.description, score, findings, duration: Math.round(performance.now() - start) };
 }

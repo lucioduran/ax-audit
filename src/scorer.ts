@@ -1,11 +1,8 @@
 import { CHECK_WEIGHTS, GRADES } from './constants.js';
+import type { CheckResult, CheckMeta, Grade } from './types.js';
 
-/**
- * Calculate the weighted overall score from individual check results.
- * Re-normalizes if only a subset of checks was run.
- */
-export function calculateOverallScore(results, metas) {
-  const weightMap = {};
+export function calculateOverallScore(results: CheckResult[], metas: CheckMeta[]): number {
+  const weightMap: Record<string, number> = {};
   let totalWeight = 0;
 
   for (const m of metas) {
@@ -23,10 +20,7 @@ export function calculateOverallScore(results, metas) {
   return Math.max(0, Math.min(100, overall));
 }
 
-/**
- * Map a numeric score to a grade.
- */
-export function getGrade(score) {
+export function getGrade(score: number): Grade {
   for (const grade of GRADES) {
     if (score >= grade.min) return grade;
   }

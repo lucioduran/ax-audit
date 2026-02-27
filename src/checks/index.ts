@@ -1,3 +1,5 @@
+import type { CheckModule } from '../types.js';
+
 import llmsTxt, { meta as llmsTxtMeta } from './llms-txt.js';
 import robotsTxt, { meta as robotsTxtMeta } from './robots-txt.js';
 import agentJson, { meta as agentJsonMeta } from './agent-json.js';
@@ -7,7 +9,7 @@ import metaTags, { meta as metaTagsMeta } from './meta-tags.js';
 import openapi, { meta as openapiMeta } from './openapi.js';
 import httpHeaders, { meta as httpHeadersMeta } from './http-headers.js';
 
-export const checks = [
+export const checks: CheckModule[] = [
   { run: llmsTxt, meta: llmsTxtMeta },
   { run: robotsTxt, meta: robotsTxtMeta },
   { run: agentJson, meta: agentJsonMeta },
