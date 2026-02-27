@@ -159,8 +159,9 @@ npm test
 Contributions are welcome. To add a new check:
 
 1. Create `src/checks/your-check.ts` exporting `default` (async check function) and `meta` (CheckMeta)
-2. Register it in `src/checks/index.ts`
-3. Add its weight to `CHECK_WEIGHTS` in `src/constants.ts`
+2. Use `buildResult(meta, score, findings, start)` from `./utils.js` to return results
+3. Register it in `src/checks/index.ts`
+4. Add its weight to `CHECK_WEIGHTS` in `src/constants.ts`
 
 ## License
 

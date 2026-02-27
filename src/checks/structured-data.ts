@@ -1,4 +1,5 @@
 import type { CheckContext, CheckResult, CheckMeta, Finding } from '../types.js';
+import { buildResult } from './utils.js';
 
 export const meta: CheckMeta = {
   id: 'structured-data',
@@ -15,7 +16,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   const html = ctx.html;
   if (!html) {
     findings.push({ status: 'fail', message: 'Could not fetch homepage HTML' });
-    return build(0, findings, start);
+    return buildResult(meta, 0, findings, start);
   }
 
   const jsonLdPattern = /<script\s+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
@@ -23,7 +24,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
 
   if (blocks.length === 0) {
     findings.push({ status: 'fail', message: 'No JSON-LD structured data found' });
-    return build(0, findings, start);
+    return buildResult(meta, 0, findings, start);
   }
 
   findings.push({ status: 'pass', message: `${blocks.length} JSON-LD block(s) found` });
@@ -41,7 +42,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
 
   if (parsed.length === 0) {
     findings.push({ status: 'fail', message: 'All JSON-LD blocks have invalid JSON' });
-    return build(10, findings, start);
+    return buildResult(meta, 10, findings, start);
   }
 
   const hasContext = parsed.some(d => {
@@ -88,7 +89,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     score -= 5;
   }
 
-  return build(Math.max(0, Math.min(100, score)), findings, start);
+  return buildResult(meta, Math.max(0, Math.min(100, score)), findings, start);
 }
 
 function unescapeHtml(str: string): string {
@@ -115,8 +116,4 @@ function collectTypes(obj: unknown, types: Set<string>): void {
   if (Array.isArray(obj)) {
     (obj as unknown[]).forEach(item => collectTypes(item, types));
   }
-}
-
-function build(score: number, findings: Finding[], start: number): CheckResult {
-  return { id: meta.id, name: meta.name, description: meta.description, score, findings, duration: Math.round(performance.now() - start) };
 }

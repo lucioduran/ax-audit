@@ -1,5 +1,6 @@
 import { SECURITY_TXT_REQUIRED_FIELDS } from '../constants.js';
 import type { CheckContext, CheckResult, CheckMeta, Finding } from '../types.js';
+import { buildResult } from './utils.js';
 
 export const meta: CheckMeta = {
   id: 'security-txt',
@@ -17,7 +18,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
 
   if (!res.ok) {
     findings.push({ status: 'fail', message: '/.well-known/security.txt not found', detail: `HTTP ${res.status || 'network error'}` });
-    return build(0, findings, start);
+    return buildResult(meta, 0, findings, start);
   }
 
   findings.push({ status: 'pass', message: '/.well-known/security.txt exists' });
@@ -57,9 +58,5 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     score -= 5;
   }
 
-  return build(Math.max(0, Math.min(100, score)), findings, start);
-}
-
-function build(score: number, findings: Finding[], start: number): CheckResult {
-  return { id: meta.id, name: meta.name, description: meta.description, score, findings, duration: Math.round(performance.now() - start) };
+  return buildResult(meta, Math.max(0, Math.min(100, score)), findings, start);
 }

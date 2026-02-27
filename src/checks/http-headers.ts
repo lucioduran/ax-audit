@@ -1,5 +1,6 @@
 import { SECURITY_HEADERS } from '../constants.js';
 import type { CheckContext, CheckResult, CheckMeta, Finding } from '../types.js';
+import { buildResult } from './utils.js';
 
 export const meta: CheckMeta = {
   id: 'http-headers',
@@ -16,7 +17,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   const headers = ctx.headers;
   if (!headers || Object.keys(headers).length === 0) {
     findings.push({ status: 'fail', message: 'Could not fetch homepage headers' });
-    return build(0, findings, start);
+    return buildResult(meta, 0, findings, start);
   }
 
   let securityCount = 0;
@@ -76,9 +77,5 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     findings.push({ status: 'pass', message: 'X-Robots-Tag: noindex on /llms.txt (prevents search indexing of raw text)' });
   }
 
-  return build(Math.max(0, Math.min(100, score)), findings, start);
-}
-
-function build(score: number, findings: Finding[], start: number): CheckResult {
-  return { id: meta.id, name: meta.name, description: meta.description, score, findings, duration: Math.round(performance.now() - start) };
+  return buildResult(meta, Math.max(0, Math.min(100, score)), findings, start);
 }

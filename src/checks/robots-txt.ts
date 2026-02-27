@@ -1,5 +1,6 @@
 import { ALL_AI_CRAWLERS, CORE_AI_CRAWLERS } from '../constants.js';
 import type { CheckContext, CheckResult, CheckMeta, Finding } from '../types.js';
+import { buildResult } from './utils.js';
 
 export const meta: CheckMeta = {
   id: 'robots-txt',
@@ -24,7 +25,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
 
   if (!res.ok) {
     findings.push({ status: 'fail', message: '/robots.txt not found' });
-    return build(0, findings, start);
+    return buildResult(meta, 0, findings, start);
   }
 
   findings.push({ status: 'pass', message: '/robots.txt exists' });
@@ -91,7 +92,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     message: `${totalConfigured.length}/${ALL_AI_CRAWLERS.length} known AI crawlers have explicit rules`,
   });
 
-  return build(Math.max(0, Math.min(100, score)), findings, start);
+  return buildResult(meta, Math.max(0, Math.min(100, score)), findings, start);
 }
 
 function parseUserAgents(text: string): BotEntry[] {
@@ -134,8 +135,4 @@ function parseUserAgents(text: string): BotEntry[] {
   }
 
   return entries;
-}
-
-function build(score: number, findings: Finding[], start: number): CheckResult {
-  return { id: meta.id, name: meta.name, description: meta.description, score, findings, duration: Math.round(performance.now() - start) };
 }
