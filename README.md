@@ -67,6 +67,9 @@ ax-audit https://example.com
 # Batch audit — audit multiple URLs in a single run
 ax-audit https://example.com https://other-site.com https://third.dev
 
+# HTML report — self-contained, dark mode, shareable
+ax-audit https://example.com --output html > report.html
+
 # JSON output for CI/CD pipelines
 ax-audit https://example.com --json
 
@@ -100,6 +103,16 @@ Pass multiple URLs to audit them sequentially. Each gets its own full report, fo
 ```
 
 Exit code: `0` if all URLs score >= 70, `1` if any fails.
+
+### HTML Report
+
+Generate a self-contained HTML report you can open in any browser or share with your team:
+
+```bash
+ax-audit https://example.com --output html > report.html
+```
+
+Features: circular score gauge, dark/light mode, collapsible check sections, responsive design. Works for both single and batch audits.
 
 ## Programmatic API
 

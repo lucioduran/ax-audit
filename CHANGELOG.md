@@ -2,9 +2,13 @@
 
 All notable changes to ax-audit are documented here.
 
-## [Unreleased] — v2.0.0
+## [2.0.0] - 2026-02-27
 
-- HTML reporter (`--output html`)
+### Added
+
+- **HTML reporter**: `--output html` generates a self-contained HTML report with circular score gauge, dark mode support, collapsible check sections, and responsive design
+- Supports both single URL and batch reports
+- Pipe to file: `ax-audit https://example.com --output html > report.html`
 
 ## [1.15.0] - 2026-02-27
 

@@ -1,6 +1,6 @@
 {
   "name": "ax-audit",
-  "version": "1.15.0",
+  "version": "2.0.0",
   "description": "Audit websites for AI Agent Experience (AX) readiness. Lighthouse for AI Agents.",
   "type": "module",
   "license": "Apache-2.0",
