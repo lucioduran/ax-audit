@@ -41,6 +41,9 @@ export function reportTerminal(report: AuditReport): void {
       if (finding.detail) {
         console.log(chalk.dim(`         ${finding.detail}`));
       }
+      if (finding.hint) {
+        console.log(chalk.dim.italic(`         \uD83D\uDCA1 ${finding.hint}`));
+      }
     }
     console.log();
   }

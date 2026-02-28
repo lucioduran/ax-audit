@@ -24,7 +24,11 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   const res = await ctx.fetch(`${ctx.url}/robots.txt`);
 
   if (!res.ok) {
-    findings.push({ status: 'fail', message: '/robots.txt not found' });
+    findings.push({
+      status: 'fail',
+      message: '/robots.txt not found',
+      hint: 'Create a /robots.txt file at your site root. Add User-agent entries for AI crawlers (GPTBot, ClaudeBot, etc.) with Allow: / to grant access.',
+    });
     return buildResult(meta, 0, findings, start);
   }
 
@@ -47,6 +51,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: `${coreConfigured.length}/${CORE_AI_CRAWLERS.length} core AI crawlers configured`,
       detail: `Missing: ${coreMissing.join(', ')}`,
+      hint: `Add explicit User-agent entries for the missing crawlers with Allow: / for each one.`,
     });
     score -= Math.round((coreMissing.length / CORE_AI_CRAWLERS.length) * 30);
   } else {
@@ -54,6 +59,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'fail',
       message: 'No core AI crawlers explicitly configured',
       detail: `Expected: ${CORE_AI_CRAWLERS.join(', ')}`,
+      hint: 'Add User-agent entries for core AI crawlers in your robots.txt. For each crawler, add: User-agent: <name> followed by Allow: / on the next line.',
     });
     score -= 40;
   }
@@ -68,6 +74,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
         status: 'warn',
         message: `${blockedByWildcard.length} core AI crawler(s) blocked via wildcard User-agent: *`,
         detail: blockedByWildcard.join(', '),
+        hint: 'Your "User-agent: * / Disallow: /" rule blocks these crawlers. Add explicit User-agent entries with Allow: / for each AI crawler you want to permit.',
       });
       score -= blockedByWildcard.length * 5;
     }
@@ -81,6 +88,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: `${blockedBots.length} AI crawler(s) explicitly blocked`,
       detail: blockedBots.map((b) => b.name).join(', '),
+      hint: 'These crawlers have "Disallow: /" rules. If you want AI agents to access your site, change to "Allow: /" for each blocked crawler.',
     });
     score -= blockedBots.length * 3;
   }
@@ -98,13 +106,18 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: `${restrictedBots.length} AI crawler(s) have partial path restrictions`,
       detail: restrictedBots.map((b) => b.name).join(', '),
+      hint: 'These crawlers have Disallow rules on specific paths. For full AI access, use only "Allow: /" and let the wildcard User-agent: * handle path restrictions.',
     });
   }
 
   if (/^Sitemap:/im.test(text)) {
     findings.push({ status: 'pass', message: 'Sitemap directive present' });
   } else {
-    findings.push({ status: 'warn', message: 'No Sitemap directive found' });
+    findings.push({
+      status: 'warn',
+      message: 'No Sitemap directive found',
+      hint: 'Add a Sitemap directive to your robots.txt: Sitemap: https://your-site.com/sitemap.xml',
+    });
     score -= 5;
   }
 
@@ -114,6 +127,9 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   findings.push({
     status: totalConfigured.length >= 10 ? 'pass' : 'warn',
     message: `${totalConfigured.length}/${ALL_AI_CRAWLERS.length} known AI crawlers have explicit rules`,
+    ...(totalConfigured.length < 10
+      ? { hint: 'Add explicit User-agent entries for more AI crawlers to maximize discoverability.' }
+      : {}),
   });
 
   return buildResult(meta, Math.max(0, Math.min(100, score)), findings, start);

@@ -23,7 +23,11 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   const blocks = [...html.matchAll(jsonLdPattern)];
 
   if (blocks.length === 0) {
-    findings.push({ status: 'fail', message: 'No JSON-LD structured data found' });
+    findings.push({
+      status: 'fail',
+      message: 'No JSON-LD structured data found',
+      hint: 'Add a <script type="application/ld+json"> block in your HTML <head> with schema.org structured data describing your site, organization, or person.',
+    });
     return buildResult(meta, 0, findings, start);
   }
 
@@ -35,13 +39,21 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     try {
       parsed.push(JSON.parse(raw));
     } catch {
-      findings.push({ status: 'warn', message: 'Invalid JSON in a JSON-LD block' });
+      findings.push({
+        status: 'warn',
+        message: 'Invalid JSON in a JSON-LD block',
+        hint: 'Validate your JSON-LD syntax. Check for trailing commas, missing quotes, or unescaped characters. Use https://validator.schema.org/ to test.',
+      });
       score -= 10;
     }
   }
 
   if (parsed.length === 0) {
-    findings.push({ status: 'fail', message: 'All JSON-LD blocks have invalid JSON' });
+    findings.push({
+      status: 'fail',
+      message: 'All JSON-LD blocks have invalid JSON',
+      hint: 'Fix the JSON syntax errors in your JSON-LD blocks. Use a JSON linter or https://validator.schema.org/ to validate.',
+    });
     return buildResult(meta, 10, findings, start);
   }
 
@@ -49,7 +61,11 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   if (hasContext) {
     findings.push({ status: 'pass', message: '@context references schema.org' });
   } else {
-    findings.push({ status: 'warn', message: 'No @context referencing schema.org' });
+    findings.push({
+      status: 'warn',
+      message: 'No @context referencing schema.org',
+      hint: 'Add "@context": "https://schema.org" to your JSON-LD root object.',
+    });
     score -= 15;
   }
 
@@ -57,7 +73,11 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   if (hasGraph) {
     findings.push({ status: 'pass', message: '@graph array present (multi-entity structured data)' });
   } else {
-    findings.push({ status: 'warn', message: 'No @graph array (single-entity only)' });
+    findings.push({
+      status: 'warn',
+      message: 'No @graph array (single-entity only)',
+      hint: 'Use an @graph array to define multiple entities in one JSON-LD block: { "@context": "https://schema.org", "@graph": [...] }',
+    });
     score -= 5;
   }
 
@@ -76,17 +96,26 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: `Only 1 key type found: ${foundTypes[0]}`,
       detail: `Consider adding: ${importantTypes.filter((t) => !allTypes.has(t)).join(', ')}`,
+      hint: 'Add more entity types to your @graph. AI agents use these to understand site structure. Common types: Person, Organization, WebSite, WebPage.',
     });
     score -= 10;
   } else {
-    findings.push({ status: 'warn', message: 'No key entity types (Person, Organization, WebSite, etc.)' });
+    findings.push({
+      status: 'warn',
+      message: 'No key entity types (Person, Organization, WebSite, etc.)',
+      hint: 'Add @type to your JSON-LD entities. Use Person or Organization for the owner, WebSite for the site, and WebPage for individual pages.',
+    });
     score -= 15;
   }
 
   if (allTypes.has('BreadcrumbList')) {
     findings.push({ status: 'pass', message: 'BreadcrumbList present' });
   } else {
-    findings.push({ status: 'warn', message: 'No BreadcrumbList found' });
+    findings.push({
+      status: 'warn',
+      message: 'No BreadcrumbList found',
+      hint: 'Add a BreadcrumbList entity to help AI agents understand your site navigation hierarchy.',
+    });
     score -= 5;
   }
 
@@ -134,12 +163,10 @@ function collectTypes(obj: unknown, types: Set<string>, depth = 0): void {
     t.forEach((type) => types.add(type));
   }
 
-  // Recurse into @graph
   if (Array.isArray(record['@graph'])) {
     (record['@graph'] as unknown[]).forEach((item) => collectTypes(item, types, depth + 1));
   }
 
-  // Recurse into nested objects (author, publisher, mainEntity, etc.)
   for (const [key, value] of Object.entries(record)) {
     if (key.startsWith('@')) continue;
     if (value && typeof value === 'object') {

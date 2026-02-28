@@ -16,7 +16,12 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   const res = await ctx.fetch(`${ctx.url}/llms.txt`);
 
   if (!res.ok) {
-    findings.push({ status: 'fail', message: '/llms.txt not found', detail: `HTTP ${res.status || 'network error'}` });
+    findings.push({
+      status: 'fail',
+      message: '/llms.txt not found',
+      detail: `HTTP ${res.status || 'network error'}`,
+      hint: 'Create a /llms.txt file at your site root following the llmstxt.org specification. It should be a Markdown file starting with "# Your Site Name" and include a description, sections, and links.',
+    });
     return buildResult(meta, 0, findings, start);
   }
 
@@ -28,7 +33,11 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     .filter(Boolean);
 
   if (!lines[0]?.startsWith('# ')) {
-    findings.push({ status: 'warn', message: 'Missing H1 heading (first line should start with "# ")' });
+    findings.push({
+      status: 'warn',
+      message: 'Missing H1 heading (first line should start with "# ")',
+      hint: 'Add an H1 heading as the first line of your llms.txt file, e.g.: # Your Site Name',
+    });
     score -= 15;
   } else {
     findings.push({ status: 'pass', message: `H1 heading: "${lines[0].slice(2)}"` });
@@ -36,7 +45,11 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
 
   const hasBlockquote = lines.some((l) => l.startsWith('> '));
   if (!hasBlockquote) {
-    findings.push({ status: 'warn', message: 'No blockquote description found ("> ...")' });
+    findings.push({
+      status: 'warn',
+      message: 'No blockquote description found ("> ...")',
+      hint: 'Add a blockquote description after the H1 heading, e.g.: > A brief summary of your site for AI agents.',
+    });
     score -= 10;
   } else {
     findings.push({ status: 'pass', message: 'Blockquote description present' });
@@ -44,7 +57,11 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
 
   const sections = lines.filter((l) => l.startsWith('## '));
   if (sections.length === 0) {
-    findings.push({ status: 'warn', message: 'No section headings found (## ...)' });
+    findings.push({
+      status: 'warn',
+      message: 'No section headings found (## ...)',
+      hint: 'Organize your llms.txt content with ## section headings (e.g., ## About, ## API, ## Documentation).',
+    });
     score -= 10;
   } else {
     findings.push({ status: 'pass', message: `${sections.length} section heading(s) found` });
@@ -53,14 +70,22 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   const linkPattern = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
   const links = [...text.matchAll(linkPattern)];
   if (links.length === 0) {
-    findings.push({ status: 'warn', message: 'No Markdown links found' });
+    findings.push({
+      status: 'warn',
+      message: 'No Markdown links found',
+      hint: 'Add Markdown links to relevant pages: [Page Title](https://example.com/page). This helps AI agents navigate your site.',
+    });
     score -= 10;
   } else {
     findings.push({ status: 'pass', message: `${links.length} link(s) found` });
   }
 
   if (text.length < 100) {
-    findings.push({ status: 'warn', message: 'Content appears minimal (< 100 characters)' });
+    findings.push({
+      status: 'warn',
+      message: 'Content appears minimal (< 100 characters)',
+      hint: 'Expand your llms.txt with more descriptive content about your site, its purpose, and available resources.',
+    });
     score -= 10;
   }
 
@@ -69,7 +94,11 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     findings.push({ status: 'pass', message: '/llms-full.txt also available (bonus)' });
     score = Math.min(100, score + 10);
   } else {
-    findings.push({ status: 'warn', message: '/llms-full.txt not found (optional but recommended)' });
+    findings.push({
+      status: 'warn',
+      message: '/llms-full.txt not found (optional but recommended)',
+      hint: 'Create a /llms-full.txt with expanded content — full documentation, API details, and comprehensive site information for AI agents.',
+    });
   }
 
   return buildResult(meta, Math.max(0, Math.min(100, score)), findings, start);

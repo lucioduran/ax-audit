@@ -4,6 +4,7 @@ export interface Finding {
   status: FindingStatus;
   message: string;
   detail?: string;
+  hint?: string;
 }
 
 export interface CheckResult {

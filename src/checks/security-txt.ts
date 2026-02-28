@@ -21,6 +21,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'fail',
       message: '/.well-known/security.txt not found',
       detail: `HTTP ${res.status || 'network error'}`,
+      hint: 'Create a /.well-known/security.txt file per RFC 9116. At minimum, include Contact: and Expires: fields. See https://securitytxt.org/ for a generator.',
     });
     return buildResult(meta, 0, findings, start);
   }
@@ -33,7 +34,11 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     if (regex.test(text)) {
       findings.push({ status: 'pass', message: `Required field "${field}" present` });
     } else {
-      findings.push({ status: 'fail', message: `Required field "${field}" missing (RFC 9116)` });
+      findings.push({
+        status: 'fail',
+        message: `Required field "${field}" missing (RFC 9116)`,
+        hint: `Add "${field}:" to your security.txt. ${field === 'Contact' ? 'Use a mailto: or https: URI, e.g., Contact: mailto:security@example.com' : 'Use an ISO 8601 date, e.g., Expires: 2026-12-31T23:59:59.000Z'}`,
+      });
       score -= 25;
     }
   }
@@ -48,7 +53,11 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
           message: `Expires date is in the future (${expiresDate.toISOString().split('T')[0]})`,
         });
       } else {
-        findings.push({ status: 'fail', message: 'Expires date is in the past — security.txt is expired' });
+        findings.push({
+          status: 'fail',
+          message: 'Expires date is in the past — security.txt is expired',
+          hint: 'Update the Expires field to a future date. RFC 9116 requires security.txt to have a valid, non-expired date.',
+        });
         score -= 20;
       }
     }
@@ -61,7 +70,11 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   } else if (present.length > 0) {
     findings.push({ status: 'pass', message: `${present.length}/${optionalFields.length} optional fields present` });
   } else {
-    findings.push({ status: 'warn', message: 'No optional fields (Canonical, Preferred-Languages, Policy, etc.)' });
+    findings.push({
+      status: 'warn',
+      message: 'No optional fields (Canonical, Preferred-Languages, Policy, etc.)',
+      hint: 'Consider adding Canonical: (canonical URL), Preferred-Languages: (e.g., en), and Policy: (link to your security policy).',
+    });
     score -= 5;
   }
 
