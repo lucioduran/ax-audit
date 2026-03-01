@@ -1,22 +1,28 @@
 import chalk from 'chalk';
-import { GRADES } from '../constants.js';
-import type { AuditReport, BatchAuditReport, Grade } from '../types.js';
+import { getGrade } from '../scorer.js';
+import type { AuditReport, BatchAuditReport, FindingStatus, Grade } from '../types.js';
 
-const STATUS_ICONS: Record<string, string> = {
+const STATUS_ICONS: Record<FindingStatus, string> = {
   pass: chalk.green('  PASS '),
   warn: chalk.yellow('  WARN '),
   fail: chalk.red('  FAIL '),
 };
 
 function gradeColor(grade: Grade) {
-  if (grade.label === 'Excellent') return chalk.green;
-  if (grade.label === 'Good') return chalk.yellow;
-  if (grade.label === 'Fair') return chalk.hex('#FFA500');
-  return chalk.red;
+  switch (grade.color) {
+    case 'green':
+      return chalk.green;
+    case 'yellow':
+      return chalk.yellow;
+    case 'orange':
+      return chalk.hex('#FFA500');
+    default:
+      return chalk.red;
+  }
 }
 
 export function reportTerminal(report: AuditReport): void {
-  const grade = GRADES.find((g) => report.overallScore >= g.min) || GRADES[GRADES.length - 1];
+  const grade = getGrade(report.overallScore);
   const colorFn = gradeColor(grade);
 
   console.log();
@@ -78,7 +84,7 @@ export function reportBatchTerminal(batch: BatchAuditReport): void {
   console.log(chalk.dim('  ' + '─'.repeat(colUrl + colScore + colGrade)));
 
   for (const r of batch.reports) {
-    const rGrade = GRADES.find((g) => r.overallScore >= g.min) || GRADES[GRADES.length - 1];
+    const rGrade = getGrade(r.overallScore);
     const rColor = gradeColor(rGrade);
     const shortUrl = r.url.length > colUrl - 2 ? r.url.slice(0, colUrl - 5) + '...' : r.url;
     console.log(

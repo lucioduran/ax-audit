@@ -14,4 +14,5 @@ export type {
   FindingStatus,
   FetchResponse,
   Grade,
+  OutputFormat,
 } from './types.js';

@@ -116,7 +116,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     score -= 5;
   }
 
-  const linkHeader = headers['link'] || '';
+  const linkHeader = headers['link'] ?? '';
   const links = parseLinkHeader(linkHeader);
   const hasLlmsLink = links.some((l) => /llms\.txt/i.test(l.url));
   const hasAgentLink = links.some((l) => /agent\.json/i.test(l.url));
@@ -178,5 +178,5 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     });
   }
 
-  return buildResult(meta, Math.max(0, Math.min(100, score)), findings, start);
+  return buildResult(meta, score, findings, start);
 }

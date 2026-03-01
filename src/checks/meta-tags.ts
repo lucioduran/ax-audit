@@ -76,10 +76,8 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   }
 
   const relMePattern = /rel=["']me["']/gi;
-  const relMeCount = (html.match(relMePattern) || []).length;
-  if (relMeCount >= 3) {
-    findings.push({ status: 'pass', message: `${relMeCount} rel="me" identity link(s) found` });
-  } else if (relMeCount > 0) {
+  const relMeCount = (html.match(relMePattern) ?? []).length;
+  if (relMeCount > 0) {
     findings.push({ status: 'pass', message: `${relMeCount} rel="me" identity link(s) found` });
   } else {
     findings.push({
@@ -102,7 +100,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     score -= 10;
   }
 
-  return buildResult(meta, Math.max(0, Math.min(100, score)), findings, start);
+  return buildResult(meta, score, findings, start);
 }
 
 function escapeRegex(str: string): string {

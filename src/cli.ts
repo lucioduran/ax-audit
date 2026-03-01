@@ -3,7 +3,7 @@ import { audit, batchAudit } from './orchestrator.js';
 import { report, reportBatch } from './reporter/index.js';
 import { VERSION } from './constants.js';
 import { checks as allChecks } from './checks/index.js';
-import type { AuditReport } from './types.js';
+import type { AuditReport, OutputFormat } from './types.js';
 
 export function cli(argv: string[]): void {
   const program = new Command();
@@ -40,7 +40,7 @@ export function cli(argv: string[]): void {
           }
         }
 
-        const format = options.json ? 'json' : options.output;
+        const format = (options.json ? 'json' : options.output) as OutputFormat;
         const checks = options.checks ? options.checks.split(',').map((s) => s.trim()) : undefined;
 
         if (checks) {
@@ -74,8 +74,8 @@ export function cli(argv: string[]): void {
             process.exit(batch.summary.failed === 0 ? 0 : 1);
           }
         } catch (err: unknown) {
-          const error = err as Error;
-          console.error(`Fatal: ${error.message}`);
+          const message = err instanceof Error ? err.message : String(err);
+          console.error(`Fatal: ${message}`);
           process.exit(2);
         }
       },

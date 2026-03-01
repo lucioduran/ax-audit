@@ -101,5 +101,5 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     });
   }
 
-  return buildResult(meta, Math.max(0, Math.min(100, score)), findings, start);
+  return buildResult(meta, score, findings, start);
 }

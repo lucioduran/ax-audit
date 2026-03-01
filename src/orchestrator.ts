@@ -5,11 +5,11 @@ import type { AuditOptions, AuditReport, BatchAuditReport, CheckContext, CheckRe
 
 export async function audit(options: AuditOptions): Promise<AuditReport> {
   const startTime = performance.now();
-  const verbose = options.verbose || false;
+  const verbose = options.verbose ?? false;
   const log = verbose ? (msg: string) => console.error(`  [verbose] ${msg}`) : () => {};
-  const fetcher = createFetcher({ timeout: options.timeout || 10000, verbose });
+  const fetcher = createFetcher({ timeout: options.timeout ?? 10000, verbose });
 
-  const homepage = await fetcher.fetchPage(options.url);
+  const homepage = await fetcher.fetch(options.url);
 
   const ctx: CheckContext = {
     url: options.url.replace(/\/$/, ''),

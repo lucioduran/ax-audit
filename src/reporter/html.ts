@@ -1,5 +1,5 @@
-import { GRADES } from '../constants.js';
-import type { AuditReport, BatchAuditReport, CheckResult, Finding, Grade } from '../types.js';
+import { getGrade } from '../scorer.js';
+import type { AuditReport, BatchAuditReport, CheckResult, Finding, FindingStatus, Grade } from '../types.js';
 
 function gradeHslColor(grade: Grade): string {
   switch (grade.color) {
@@ -14,7 +14,7 @@ function gradeHslColor(grade: Grade): string {
   }
 }
 
-function statusIcon(status: string): string {
+function statusIcon(status: FindingStatus): string {
   switch (status) {
     case 'pass':
       return '<span class="icon pass">&#10003;</span>';
@@ -22,17 +22,11 @@ function statusIcon(status: string): string {
       return '<span class="icon warn">&#9888;</span>';
     case 'fail':
       return '<span class="icon fail">&#10007;</span>';
-    default:
-      return '';
   }
 }
 
 function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function getGrade(score: number): Grade {
-  return GRADES.find((g) => score >= g.min) || GRADES[GRADES.length - 1];
 }
 
 function renderGauge(score: number, size: number = 160): string {

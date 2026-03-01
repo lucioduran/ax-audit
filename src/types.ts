@@ -83,3 +83,5 @@ export interface SecurityHeader {
   label: string;
   critical: boolean;
 }
+
+export type OutputFormat = 'terminal' | 'json' | 'html';

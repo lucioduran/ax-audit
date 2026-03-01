@@ -1,4 +1,5 @@
 import { CHECK_WEIGHTS, GRADES } from './constants.js';
+import { clampScore } from './checks/utils.js';
 import type { CheckResult, CheckMeta, Grade } from './types.js';
 
 export function calculateOverallScore(results: CheckResult[], metas: CheckMeta[]): number {
@@ -12,12 +13,11 @@ export function calculateOverallScore(results: CheckResult[], metas: CheckMeta[]
 
   let weightedSum = 0;
   for (const r of results) {
-    const weight = weightMap[r.id] || 0;
+    const weight = weightMap[r.id] ?? 0;
     weightedSum += (r.score / 100) * weight;
   }
 
-  const overall = Math.round((weightedSum / totalWeight) * 100);
-  return Math.max(0, Math.min(100, overall));
+  return clampScore(Math.round((weightedSum / totalWeight) * 100));
 }
 
 export function getGrade(score: number): Grade {

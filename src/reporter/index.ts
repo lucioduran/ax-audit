@@ -1,9 +1,9 @@
 import { reportTerminal, reportBatchTerminal } from './terminal.js';
 import { reportJson, reportBatchJson } from './json.js';
 import { reportHtml, reportBatchHtml } from './html.js';
-import type { AuditReport, BatchAuditReport } from '../types.js';
+import type { AuditReport, BatchAuditReport, OutputFormat } from '../types.js';
 
-export function report(auditReport: AuditReport, format: string): void {
+export function report(auditReport: AuditReport, format: OutputFormat): void {
   switch (format) {
     case 'json':
       reportJson(auditReport);
@@ -12,13 +12,12 @@ export function report(auditReport: AuditReport, format: string): void {
       reportHtml(auditReport);
       break;
     case 'terminal':
-    default:
       reportTerminal(auditReport);
       break;
   }
 }
 
-export function reportBatch(batchReport: BatchAuditReport, format: string): void {
+export function reportBatch(batchReport: BatchAuditReport, format: OutputFormat): void {
   switch (format) {
     case 'json':
       reportBatchJson(batchReport);
@@ -27,7 +26,6 @@ export function reportBatch(batchReport: BatchAuditReport, format: string): void
       reportBatchHtml(batchReport);
       break;
     case 'terminal':
-    default:
       reportBatchTerminal(batchReport);
       break;
   }

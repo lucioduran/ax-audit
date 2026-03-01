@@ -8,7 +8,6 @@ interface FetcherOptions {
 
 interface Fetcher {
   fetch: (url: string) => Promise<FetchResponse>;
-  fetchPage: (url: string) => Promise<FetchResponse>;
 }
 
 export function createFetcher({ timeout = 10000, verbose = false }: FetcherOptions = {}): Fetcher {
@@ -54,7 +53,7 @@ export function createFetcher({ timeout = 10000, verbose = false }: FetcherOptio
       cache.set(url, result);
       return result;
     } catch (err: unknown) {
-      const error = err as Error & { name: string };
+      const error = err instanceof Error ? err : new Error(String(err));
       const errorMsg = error.name === 'AbortError' ? 'Request timed out' : error.message;
       log(`  ERROR: ${errorMsg}`);
       const result: FetchResponse = {
@@ -72,5 +71,5 @@ export function createFetcher({ timeout = 10000, verbose = false }: FetcherOptio
     }
   }
 
-  return { fetch: fetchUrl, fetchPage: fetchUrl };
+  return { fetch: fetchUrl };
 }
