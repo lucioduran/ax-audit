@@ -1,4 +1,8 @@
-# ax-audit
+<p align="center">
+  <img src="ax-logo.svg" alt="ax-audit logo" width="120">
+</p>
+
+<h1 align="center">ax-audit</h1>
 
 [![CI](https://github.com/lucioduran/ax-audit/actions/workflows/ci.yml/badge.svg)](https://github.com/lucioduran/ax-audit/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/ax-audit.svg)](https://www.npmjs.com/package/ax-audit)
