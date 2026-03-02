@@ -136,7 +136,10 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     status: totalConfigured.length >= 10 ? 'pass' : 'warn',
     message: `${totalConfigured.length}/${ALL_AI_CRAWLERS.length} known AI crawlers have explicit rules`,
     ...(totalConfigured.length < 10
-      ? { hint: 'Add explicit User-agent entries for more AI crawlers to maximize discoverability.', learnMoreUrl: guideUrl(meta.id, 'low-coverage') }
+      ? {
+          hint: 'Add explicit User-agent entries for more AI crawlers to maximize discoverability.',
+          learnMoreUrl: guideUrl(meta.id, 'low-coverage'),
+        }
       : {}),
   });
 
