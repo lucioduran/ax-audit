@@ -1,3 +1,4 @@
+import { guideUrl } from '../guide-urls.js';
 import type { CheckContext, CheckResult, CheckMeta, Finding } from '../types.js';
 import { buildResult } from './utils.js';
 
@@ -21,6 +22,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       message: '/.well-known/openapi.json not found',
       detail: `HTTP ${res.status || 'network error'}`,
       hint: 'Create a /.well-known/openapi.json file with your API specification following the OpenAPI 3.x standard. See https://swagger.io/specification/ for the spec.',
+      learnMoreUrl: guideUrl(meta.id, 'not-found'),
     });
     return buildResult(meta, 0, findings, start);
   }
@@ -35,6 +37,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'fail',
       message: 'Invalid JSON',
       hint: 'Fix the JSON syntax in your openapi.json file. Validate with a JSON linter.',
+      learnMoreUrl: guideUrl(meta.id, 'invalid-json'),
     });
     return buildResult(meta, 10, findings, start);
   }
@@ -47,6 +50,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: `Swagger version: ${data.swagger} (consider upgrading to OpenAPI 3.x)`,
       hint: 'Upgrade from Swagger 2.x to OpenAPI 3.x for better AI agent compatibility. Use https://editor.swagger.io/ to convert.',
+      learnMoreUrl: guideUrl(meta.id, 'upgrade-swagger'),
     });
     score -= 10;
   } else {
@@ -54,6 +58,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'fail',
       message: 'No openapi or swagger version field',
       hint: 'Add "openapi": "3.1.0" to the root of your OpenAPI spec to declare the specification version.',
+      learnMoreUrl: guideUrl(meta.id, 'no-version'),
     });
     score -= 20;
   }
@@ -66,6 +71,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: 'Missing info.title',
       hint: 'Add an "info" object with a "title" field: "info": { "title": "Your API Name", "version": "1.0.0" }',
+      learnMoreUrl: guideUrl(meta.id, 'missing-title'),
     });
     score -= 10;
   }
@@ -77,6 +83,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: 'Missing info.description',
       hint: 'Add a "description" field inside "info" explaining what your API does and how AI agents can use it.',
+      learnMoreUrl: guideUrl(meta.id, 'missing-description'),
     });
     score -= 5;
   }
@@ -89,6 +96,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: 'No paths documented',
       hint: 'Add a "paths" object documenting your API endpoints with their methods, parameters, and responses.',
+      learnMoreUrl: guideUrl(meta.id, 'no-paths'),
     });
     score -= 15;
   }
@@ -100,6 +108,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: 'No servers defined',
       hint: 'Add a "servers" array with your API base URL: "servers": [{ "url": "https://api.example.com" }]',
+      learnMoreUrl: guideUrl(meta.id, 'no-servers'),
     });
     score -= 5;
   }

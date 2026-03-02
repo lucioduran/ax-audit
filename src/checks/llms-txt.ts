@@ -1,3 +1,4 @@
+import { guideUrl } from '../guide-urls.js';
 import type { CheckContext, CheckResult, CheckMeta, Finding } from '../types.js';
 import { buildResult } from './utils.js';
 
@@ -21,6 +22,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       message: '/llms.txt not found',
       detail: `HTTP ${res.status || 'network error'}`,
       hint: 'Create a /llms.txt file at your site root following the llmstxt.org specification. It should be a Markdown file starting with "# Your Site Name" and include a description, sections, and links.',
+      learnMoreUrl: guideUrl(meta.id, 'not-found'),
     });
     return buildResult(meta, 0, findings, start);
   }
@@ -37,6 +39,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: 'Missing H1 heading (first line should start with "# ")',
       hint: 'Add an H1 heading as the first line of your llms.txt file, e.g.: # Your Site Name',
+      learnMoreUrl: guideUrl(meta.id, 'missing-h1'),
     });
     score -= 15;
   } else {
@@ -49,6 +52,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: 'No blockquote description found ("> ...")',
       hint: 'Add a blockquote description after the H1 heading, e.g.: > A brief summary of your site for AI agents.',
+      learnMoreUrl: guideUrl(meta.id, 'missing-blockquote'),
     });
     score -= 10;
   } else {
@@ -61,6 +65,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: 'No section headings found (## ...)',
       hint: 'Organize your llms.txt content with ## section headings (e.g., ## About, ## API, ## Documentation).',
+      learnMoreUrl: guideUrl(meta.id, 'missing-sections'),
     });
     score -= 10;
   } else {
@@ -74,6 +79,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: 'No Markdown links found',
       hint: 'Add Markdown links to relevant pages: [Page Title](https://example.com/page). This helps AI agents navigate your site.',
+      learnMoreUrl: guideUrl(meta.id, 'no-links'),
     });
     score -= 10;
   } else {
@@ -85,6 +91,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: 'Content appears minimal (< 100 characters)',
       hint: 'Expand your llms.txt with more descriptive content about your site, its purpose, and available resources.',
+      learnMoreUrl: guideUrl(meta.id, 'minimal-content'),
     });
     score -= 10;
   }
@@ -98,6 +105,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: '/llms-full.txt not found (optional but recommended)',
       hint: 'Create a /llms-full.txt with expanded content — full documentation, API details, and comprehensive site information for AI agents.',
+      learnMoreUrl: guideUrl(meta.id, 'missing-full'),
     });
   }
 

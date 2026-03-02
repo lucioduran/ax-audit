@@ -1,4 +1,5 @@
 import { SECURITY_HEADERS } from '../constants.js';
+import { guideUrl } from '../guide-urls.js';
 import type { CheckContext, CheckResult, CheckMeta, Finding } from '../types.js';
 import { buildResult } from './utils.js';
 
@@ -98,6 +99,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
         status: 'fail',
         message: `Missing critical header: ${header.label}`,
         hint: `Add the ${header.label} response header to your server configuration. This is a critical security header.`,
+        learnMoreUrl: guideUrl(meta.id, 'missing-critical-header'),
       });
       score -= 10;
     }
@@ -112,6 +114,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: `Only ${securityCount}/${SECURITY_HEADERS.length} security headers present`,
       hint: 'Add security headers like Strict-Transport-Security, X-Content-Type-Options, X-Frame-Options, and Referrer-Policy to your server response.',
+      learnMoreUrl: guideUrl(meta.id, 'low-security-headers'),
     });
     score -= 5;
   }
@@ -129,6 +132,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: 'Link header does not reference agent.json',
       hint: 'Add agent.json to your Link header: Link: </.well-known/agent.json>; rel="alternate"; type="application/json"',
+      learnMoreUrl: guideUrl(meta.id, 'missing-agent-link'),
     });
     score -= 5;
   } else if (hasAgentLink) {
@@ -137,6 +141,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: 'Link header does not reference llms.txt',
       hint: 'Add llms.txt to your Link header: Link: </llms.txt>; rel="alternate"; type="text/plain"',
+      learnMoreUrl: guideUrl(meta.id, 'missing-llms-link'),
     });
     score -= 5;
   } else if (linkHeader) {
@@ -144,6 +149,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: 'Link header present but does not reference AI discovery files',
       hint: 'Add AI discovery entries to your Link header: Link: </llms.txt>; rel="alternate"; type="text/plain", </.well-known/agent.json>; rel="alternate"; type="application/json"',
+      learnMoreUrl: guideUrl(meta.id, 'no-ai-discovery'),
     });
     score -= 15;
   } else {
@@ -151,6 +157,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: 'No Link header for AI discovery (llms.txt, agent.json)',
       hint: 'Add a Link response header pointing to your AI discovery files: Link: </llms.txt>; rel="alternate"; type="text/plain", </.well-known/agent.json>; rel="alternate"; type="application/json"',
+      learnMoreUrl: guideUrl(meta.id, 'no-link-header'),
     });
     score -= 15;
   }
@@ -165,6 +172,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
         status: 'warn',
         message: 'No CORS headers on .well-known resources',
         hint: 'Add Access-Control-Allow-Origin: * to responses from /.well-known/* so AI agents from other domains can fetch your discovery files.',
+        learnMoreUrl: guideUrl(meta.id, 'no-cors'),
       });
       score -= 10;
     }

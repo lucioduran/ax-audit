@@ -59,6 +59,7 @@ function renderFinding(f: Finding): string {
         <span class="finding-msg">${escapeHtml(f.message)}</span>
         ${f.detail ? `<span class="finding-detail">${escapeHtml(f.detail)}</span>` : ''}
         ${f.hint ? `<span class="finding-hint">\uD83D\uDCA1 ${escapeHtml(f.hint)}</span>` : ''}
+        ${f.learnMoreUrl ? `<a class="finding-learn-more" href="${escapeHtml(f.learnMoreUrl)}" target="_blank" rel="noopener">\u2192 Learn more</a>` : ''}
       </div>
     </div>`;
 }
@@ -276,6 +277,8 @@ h1 {
 .finding-msg { font-size: 0.85rem; }
 .finding-detail { font-size: 0.75rem; color: var(--text-secondary); }
 .finding-hint { font-size: 0.75rem; color: var(--text-secondary); font-style: italic; margin-top: 2px; display: block; padding: 4px 8px; background: var(--gauge-bg); border-radius: 4px; }
+.finding-learn-more { font-size: 0.75rem; color: hsl(200, 80%, 50%); text-decoration: none; margin-top: 2px; display: inline-block; }
+.finding-learn-more:hover { text-decoration: underline; }
 .icon { font-weight: 700; font-size: 0.85rem; flex-shrink: 0; width: 1.2rem; text-align: center; }
 .icon.pass { color: hsl(140, 70%, 45%); }
 .icon.warn { color: hsl(45, 90%, 48%); }

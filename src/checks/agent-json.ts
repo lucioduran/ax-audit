@@ -1,4 +1,5 @@
 import { AGENT_JSON_REQUIRED_FIELDS } from '../constants.js';
+import { guideUrl } from '../guide-urls.js';
 import type { CheckContext, CheckResult, CheckMeta, Finding } from '../types.js';
 import { buildResult } from './utils.js';
 
@@ -22,6 +23,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       message: '/.well-known/agent.json not found',
       detail: `HTTP ${res.status || 'network error'}`,
       hint: "Create a /.well-known/agent.json file following the A2A (Agent-to-Agent) protocol. It should include name, description, url, and skills fields describing your site's capabilities.",
+      learnMoreUrl: guideUrl(meta.id, 'not-found'),
     });
     return buildResult(meta, 0, findings, start);
   }
@@ -36,6 +38,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'fail',
       message: 'Invalid JSON',
       hint: 'Fix the JSON syntax in your agent.json file. Validate it with a JSON linter.',
+      learnMoreUrl: guideUrl(meta.id, 'invalid-json'),
     });
     return buildResult(meta, 10, findings, start);
   }
@@ -49,6 +52,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
         status: 'fail',
         message: `Required field "${field}" missing`,
         hint: `Add the "${field}" field to your agent.json. This is required by the A2A protocol specification.`,
+        learnMoreUrl: guideUrl(meta.id, 'missing-field'),
       });
       score -= 15;
     }
@@ -61,6 +65,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: 'Skills array is empty',
       hint: 'Add at least one skill to the skills array describing what your agent/site can do.',
+      learnMoreUrl: guideUrl(meta.id, 'empty-skills'),
     });
     score -= 10;
   }
@@ -72,6 +77,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: 'No protocolVersion field',
       hint: 'Add "protocolVersion": "0.2.0" to your agent.json to declare A2A protocol compatibility.',
+      learnMoreUrl: guideUrl(meta.id, 'no-protocol-version'),
     });
     score -= 5;
   }
@@ -93,6 +99,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: 'No optional fields (capabilities, authentication, documentationUrl)',
       hint: 'Consider adding capabilities (what protocols you support), authentication (auth requirements), and documentationUrl (link to API docs).',
+      learnMoreUrl: guideUrl(meta.id, 'missing-optional'),
     });
     score -= 5;
   }

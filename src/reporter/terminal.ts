@@ -50,6 +50,9 @@ export function reportTerminal(report: AuditReport): void {
       if (finding.hint) {
         console.log(chalk.dim.italic(`         \uD83D\uDCA1 ${finding.hint}`));
       }
+      if (finding.learnMoreUrl) {
+        console.log(chalk.cyan(`         \u2192 ${finding.learnMoreUrl}`));
+      }
     }
     console.log();
   }

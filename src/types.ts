@@ -5,6 +5,7 @@ export interface Finding {
   message: string;
   detail?: string;
   hint?: string;
+  learnMoreUrl?: string;
 }
 
 export interface CheckResult {

@@ -1,3 +1,4 @@
+import { guideUrl } from '../guide-urls.js';
 import type { CheckContext, CheckResult, CheckMeta, Finding } from '../types.js';
 import { buildResult } from './utils.js';
 
@@ -27,6 +28,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'fail',
       message: 'No JSON-LD structured data found',
       hint: 'Add a <script type="application/ld+json"> block in your HTML <head> with schema.org structured data describing your site, organization, or person.',
+      learnMoreUrl: guideUrl(meta.id, 'not-found'),
     });
     return buildResult(meta, 0, findings, start);
   }
@@ -43,6 +45,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
         status: 'warn',
         message: 'Invalid JSON in a JSON-LD block',
         hint: 'Validate your JSON-LD syntax. Check for trailing commas, missing quotes, or unescaped characters. Use https://validator.schema.org/ to test.',
+        learnMoreUrl: guideUrl(meta.id, 'invalid-json'),
       });
       score -= 10;
     }
@@ -53,6 +56,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'fail',
       message: 'All JSON-LD blocks have invalid JSON',
       hint: 'Fix the JSON syntax errors in your JSON-LD blocks. Use a JSON linter or https://validator.schema.org/ to validate.',
+      learnMoreUrl: guideUrl(meta.id, 'all-invalid'),
     });
     return buildResult(meta, 10, findings, start);
   }
@@ -65,6 +69,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: 'No @context referencing schema.org',
       hint: 'Add "@context": "https://schema.org" to your JSON-LD root object.',
+      learnMoreUrl: guideUrl(meta.id, 'missing-context'),
     });
     score -= 15;
   }
@@ -77,6 +82,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: 'No @graph array (single-entity only)',
       hint: 'Use an @graph array to define multiple entities in one JSON-LD block: { "@context": "https://schema.org", "@graph": [...] }',
+      learnMoreUrl: guideUrl(meta.id, 'no-graph'),
     });
     score -= 5;
   }
@@ -97,6 +103,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       message: `Only 1 key type found: ${foundTypes[0]}`,
       detail: `Consider adding: ${importantTypes.filter((t) => !allTypes.has(t)).join(', ')}`,
       hint: 'Add more entity types to your @graph. AI agents use these to understand site structure. Common types: Person, Organization, WebSite, WebPage.',
+      learnMoreUrl: guideUrl(meta.id, 'few-types'),
     });
     score -= 10;
   } else {
@@ -104,6 +111,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: 'No key entity types (Person, Organization, WebSite, etc.)',
       hint: 'Add @type to your JSON-LD entities. Use Person or Organization for the owner, WebSite for the site, and WebPage for individual pages.',
+      learnMoreUrl: guideUrl(meta.id, 'no-types'),
     });
     score -= 15;
   }
@@ -115,6 +123,7 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
       status: 'warn',
       message: 'No BreadcrumbList found',
       hint: 'Add a BreadcrumbList entity to help AI agents understand your site navigation hierarchy.',
+      learnMoreUrl: guideUrl(meta.id, 'no-breadcrumb'),
     });
     score -= 5;
   }
