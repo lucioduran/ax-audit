@@ -2,6 +2,19 @@
 
 All notable changes to ax-audit are documented here.
 
+## [2.4.0] - 2026-04-16
+
+### Added
+
+- **Baseline comparison**: `--save-baseline <path>` saves audit results as a baseline JSON file; `--baseline <path>` compares against a previous baseline and shows per-check score deltas (▲/▼) in terminal, JSON, and HTML output
+- **Regression gate**: `--fail-on-regression <points>` exits with code 1 if any individual check regresses by more than the specified threshold — ideal for CI/CD quality gates
+- **Programmatic API**: new `saveBaseline()`, `loadBaseline()`, `diffBaseline()`, and `toBaselineData()` exports with full TypeScript types (`BaselineData`, `BaselineDiff`, `CheckDiff`)
+- **15 new tests** for baseline save/load/diff logic, including edge cases for missing files, invalid JSON, removed checks, and mixed regressions/improvements
+
+### Fixed
+
+- **Test runner glob**: `npm test` now correctly discovers test files in both `test/` root and subdirectories
+
 ## [2.0.0] - 2026-02-27
 
 ### Added

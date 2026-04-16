@@ -1,6 +1,6 @@
 {
   "name": "ax-audit",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Audit websites for AI Agent Experience (AX) readiness. Lighthouse for AI Agents.",
   "type": "module",
   "license": "Apache-2.0",
@@ -51,7 +51,7 @@
     "build": "tsc",
     "start": "node bin/ax-audit.js",
     "pretest": "npm run build",
-    "test": "node --test test/**/*.test.js",
+    "test": "node --test test/*.test.js test/**/*.test.js",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write \"src/**/*.ts\"",

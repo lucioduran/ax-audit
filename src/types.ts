@@ -86,3 +86,35 @@ export interface SecurityHeader {
 }
 
 export type OutputFormat = 'terminal' | 'json' | 'html';
+
+/* ── Baseline / Diff ──────────────────────────────────────── */
+
+/** Minimal snapshot of an audit run stored as the baseline file. */
+export interface BaselineData {
+  url: string;
+  timestamp: string;
+  overallScore: number;
+  checks: Record<string, number>; // checkId → score
+}
+
+/** Per-check score delta. */
+export interface CheckDiff {
+  id: string;
+  name: string;
+  previous: number;
+  current: number;
+  delta: number; // positive = improvement, negative = regression
+}
+
+/** Full diff between the current audit and a stored baseline. */
+export interface BaselineDiff {
+  url: string;
+  baselineTimestamp: string;
+  currentTimestamp: string;
+  overallPrevious: number;
+  overallCurrent: number;
+  overallDelta: number;
+  checks: CheckDiff[];
+  regressions: CheckDiff[]; // convenience: checks where delta < 0
+  improvements: CheckDiff[]; // convenience: checks where delta > 0
+}

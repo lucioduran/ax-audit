@@ -88,7 +88,50 @@ ax-audit https://example.com --verbose
 
 # Only show failures and warnings (hide passing findings)
 ax-audit https://example.com --only-failures
+
+# Save a baseline for future comparison
+ax-audit https://example.com --save-baseline baseline.json
+
+# Compare against a baseline — shows per-check score deltas
+ax-audit https://example.com --baseline baseline.json
+
+# Fail CI if any check regresses by more than 5 points
+ax-audit https://example.com --baseline baseline.json --fail-on-regression 5
 ```
+
+### Baseline Comparison
+
+Track score changes over time by saving a baseline and comparing against it in subsequent runs:
+
+```bash
+# First run — save the baseline
+ax-audit https://example.com --save-baseline .ax-baseline.json
+
+# Later — compare against the baseline
+ax-audit https://example.com --baseline .ax-baseline.json
+```
+
+```
+  AX Audit Report
+  https://example.com
+  Baseline: 2026-04-15T12:00:00.000Z
+
+  ████████████████████████████████░░░░░░░░  82/100  Good  ▲7
+
+  LLMs.txt (100/100)  ▲20
+  Robots.txt (70/100)  ▼10
+  ...
+
+  Regressions
+    Robots.txt: 80 → 70 (▼10)
+
+  Improvements
+    LLMs.txt: 80 → 100 (▲20)
+```
+
+Works with all output formats (terminal, JSON, HTML). In JSON mode, a `baselineDiff` object is included with per-check deltas.
+
+Use `--fail-on-regression <points>` in CI to fail the build if any individual check drops by more than the specified threshold.
 
 ### Batch Mode
 
@@ -141,7 +184,7 @@ console.log(batch.summary.averageScore); // Average across all URLs
 console.log(batch.summary.passed);       // Number of URLs scoring >= 70
 ```
 
-Also exports `calculateOverallScore`, `getGrade`, and `checks` for advanced usage.
+Also exports `calculateOverallScore`, `getGrade`, `checks`, `saveBaseline`, `loadBaseline`, `diffBaseline`, and `toBaselineData` for advanced usage.
 
 ## Scoring
 
@@ -178,6 +221,13 @@ Save the report as an artifact:
     path: ax-report.json
 ```
 
+Fail on regressions using a committed baseline:
+
+```yaml
+- name: AX Audit (regression gate)
+  run: npx ax-audit https://your-site.com --baseline .ax-baseline.json --fail-on-regression 5
+```
+
 ## Available Checks
 
 | Check ID | Use with `--checks` |
@@ -198,7 +248,7 @@ Save the report as an artifact:
 npm test
 ```
 
-97 tests covering all 9 checks, the scorer, and edge cases. Uses Node.js built-in test runner (`node:test`), no extra test dependencies.
+121 tests covering all 9 checks, the scorer, baseline comparison, and edge cases. Uses Node.js built-in test runner (`node:test`), no extra test dependencies.
 
 ## Tech Stack
 

@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import { getGrade } from '../scorer.js';
-import type { AuditReport, BatchAuditReport, FindingStatus, Grade } from '../types.js';
+import type { AuditReport, BaselineDiff, BatchAuditReport, CheckDiff, FindingStatus, Grade } from '../types.js';
 
 const STATUS_ICONS: Record<FindingStatus, string> = {
   pass: chalk.green('  PASS '),
@@ -21,7 +21,13 @@ function gradeColor(grade: Grade) {
   }
 }
 
-export function reportTerminal(report: AuditReport): void {
+function formatDelta(delta: number): string {
+  if (delta === 0) return chalk.dim('  ─');
+  if (delta > 0) return chalk.green(`  \u25B2${delta}`);
+  return chalk.red(`  \u25BC${Math.abs(delta)}`);
+}
+
+export function reportTerminal(report: AuditReport, diff?: BaselineDiff): void {
   const grade = getGrade(report.overallScore);
   const colorFn = gradeColor(grade);
 
@@ -29,18 +35,30 @@ export function reportTerminal(report: AuditReport): void {
   console.log(chalk.bold('  AX Audit Report'));
   console.log(chalk.dim(`  ${report.url}`));
   console.log(chalk.dim(`  ${report.timestamp}  (${report.duration}ms)`));
+  if (diff) {
+    console.log(chalk.dim(`  Baseline: ${diff.baselineTimestamp}`));
+  }
   console.log();
 
   const barWidth = 40;
   const filled = Math.round((report.overallScore / 100) * barWidth);
   const empty = barWidth - filled;
-  console.log(
-    `  ${colorFn('\u2588'.repeat(filled))}${chalk.gray('\u2591'.repeat(empty))}  ${colorFn.bold(report.overallScore + '/100')}  ${colorFn(grade.label)}`,
-  );
+  const scoreLine = `  ${colorFn('\u2588'.repeat(filled))}${chalk.gray('\u2591'.repeat(empty))}  ${colorFn.bold(report.overallScore + '/100')}  ${colorFn(grade.label)}`;
+  console.log(diff ? scoreLine + formatDelta(diff.overallDelta) : scoreLine);
   console.log();
 
+  // Build a lookup for per-check diffs
+  const checkDiffs = new Map<string, CheckDiff>();
+  if (diff) {
+    for (const cd of diff.checks) {
+      checkDiffs.set(cd.id, cd);
+    }
+  }
+
   for (const check of report.results) {
-    console.log(chalk.bold(`  ${check.name}`) + chalk.dim(` (${check.score}/100)`));
+    const cd = checkDiffs.get(check.id);
+    const header = chalk.bold(`  ${check.name}`) + chalk.dim(` (${check.score}/100)`);
+    console.log(cd ? header + formatDelta(cd.delta) : header);
 
     for (const finding of check.findings) {
       console.log(`${STATUS_ICONS[finding.status]} ${finding.message}`);
@@ -55,6 +73,28 @@ export function reportTerminal(report: AuditReport): void {
       }
     }
     console.log();
+  }
+
+  // Diff summary section
+  if (diff && (diff.regressions.length > 0 || diff.improvements.length > 0)) {
+    console.log(chalk.dim('  ──────────────────────────────────────'));
+    console.log();
+
+    if (diff.regressions.length > 0) {
+      console.log(chalk.red.bold('  Regressions'));
+      for (const r of diff.regressions) {
+        console.log(chalk.red(`    ${r.name}: ${r.previous} \u2192 ${r.current} (\u25BC${Math.abs(r.delta)})`));
+      }
+      console.log();
+    }
+
+    if (diff.improvements.length > 0) {
+      console.log(chalk.green.bold('  Improvements'));
+      for (const imp of diff.improvements) {
+        console.log(chalk.green(`    ${imp.name}: ${imp.previous} \u2192 ${imp.current} (\u25B2${imp.delta})`));
+      }
+      console.log();
+    }
   }
 
   if (report.overallScore < 100) {

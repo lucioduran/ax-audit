@@ -3,7 +3,20 @@ import { audit, batchAudit } from './orchestrator.js';
 import { report, reportBatch } from './reporter/index.js';
 import { VERSION } from './constants.js';
 import { checks as allChecks } from './checks/index.js';
-import type { AuditReport, OutputFormat } from './types.js';
+import { saveBaseline, loadBaseline, diffBaseline } from './baseline.js';
+import type { AuditReport, BaselineDiff, OutputFormat } from './types.js';
+
+interface CliOptions {
+  json?: boolean;
+  output: string;
+  checks?: string;
+  timeout: string;
+  verbose?: boolean;
+  onlyFailures?: boolean;
+  saveBaseline?: string;
+  baseline?: string;
+  failOnRegression?: string;
+}
 
 export function cli(argv: string[]): void {
   const program = new Command();
@@ -19,67 +32,114 @@ export function cli(argv: string[]): void {
     .option('--timeout <ms>', 'Per-request timeout in milliseconds', '10000')
     .option('--verbose', 'Show detailed request and check execution logs')
     .option('--only-failures', 'Only show checks/findings with failures or warnings')
-    .action(
-      async (
-        urls: string[],
-        options: {
-          json?: boolean;
-          output: string;
-          checks?: string;
-          timeout: string;
-          verbose?: boolean;
-          onlyFailures?: boolean;
-        },
-      ) => {
-        for (const url of urls) {
-          try {
-            new URL(url);
-          } catch {
-            console.error(`Error: Invalid URL "${url}". Provide a full URL like https://example.com`);
-            process.exit(1);
-          }
-        }
-
-        const format = (options.json ? 'json' : options.output) as OutputFormat;
-        const checks = options.checks ? options.checks.split(',').map((s) => s.trim()) : undefined;
-
-        if (checks) {
-          const validIds = allChecks.map((c) => c.meta.id);
-          const invalid = checks.filter((id) => !validIds.includes(id));
-          if (invalid.length > 0) {
-            console.error(`Error: Unknown check(s): ${invalid.join(', ')}`);
-            console.error(`Available checks: ${validIds.join(', ')}`);
-            process.exit(1);
-          }
-        }
-
-        const baseOptions = {
-          checks,
-          timeout: parseInt(options.timeout, 10),
-          verbose: options.verbose,
-        };
-
+    .option('--save-baseline <path>', 'Save audit result as a baseline JSON file for future comparison')
+    .option('--baseline <path>', 'Compare against a previously saved baseline and show score deltas')
+    .option(
+      '--fail-on-regression <points>',
+      'Exit with code 1 if any check regresses by more than N points (requires --baseline)',
+    )
+    .action(async (urls: string[], options: CliOptions) => {
+      for (const url of urls) {
         try {
-          if (urls.length === 1) {
-            const result = await audit({ ...baseOptions, url: urls[0] });
-            const output = applyOnlyFailures(result, options.onlyFailures);
-            report(output, format);
-            process.exit(result.overallScore >= 70 ? 0 : 1);
-          } else {
-            const batch = await batchAudit(urls, baseOptions);
-            if (options.onlyFailures) {
-              batch.reports = batch.reports.map((r) => applyOnlyFailures(r, true));
-            }
-            reportBatch(batch, format);
-            process.exit(batch.summary.failed === 0 ? 0 : 1);
-          }
+          new URL(url);
+        } catch {
+          console.error(`Error: Invalid URL "${url}". Provide a full URL like https://example.com`);
+          process.exit(1);
+        }
+      }
+
+      if (options.failOnRegression && !options.baseline) {
+        console.error('Error: --fail-on-regression requires --baseline');
+        process.exit(1);
+      }
+
+      const format = (options.json ? 'json' : options.output) as OutputFormat;
+      const checks = options.checks ? options.checks.split(',').map((s) => s.trim()) : undefined;
+
+      if (checks) {
+        const validIds = allChecks.map((c) => c.meta.id);
+        const invalid = checks.filter((id) => !validIds.includes(id));
+        if (invalid.length > 0) {
+          console.error(`Error: Unknown check(s): ${invalid.join(', ')}`);
+          console.error(`Available checks: ${validIds.join(', ')}`);
+          process.exit(1);
+        }
+      }
+
+      const baseOptions = {
+        checks,
+        timeout: parseInt(options.timeout, 10),
+        verbose: options.verbose,
+      };
+
+      // Load baseline if requested (fail fast before running the audit)
+      let baseline: ReturnType<typeof loadBaseline> | undefined;
+      if (options.baseline) {
+        try {
+          baseline = loadBaseline(options.baseline);
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err);
-          console.error(`Fatal: ${message}`);
+          console.error(`Error: ${message}`);
           process.exit(2);
         }
-      },
-    );
+      }
+
+      const regressionThreshold = options.failOnRegression ? parseInt(options.failOnRegression, 10) : undefined;
+
+      if (regressionThreshold !== undefined && (isNaN(regressionThreshold) || regressionThreshold < 0)) {
+        console.error('Error: --fail-on-regression must be a non-negative integer');
+        process.exit(1);
+      }
+
+      try {
+        if (urls.length === 1) {
+          const result = await audit({ ...baseOptions, url: urls[0] });
+
+          // Build diff if baseline was provided
+          let diff: BaselineDiff | undefined;
+          if (baseline) {
+            diff = diffBaseline(baseline, result);
+          }
+
+          // Save baseline if requested
+          if (options.saveBaseline) {
+            saveBaseline(options.saveBaseline, result);
+          }
+
+          const output = applyOnlyFailures(result, options.onlyFailures);
+          report(output, format, diff);
+
+          // Determine exit code
+          if (diff && regressionThreshold !== undefined) {
+            const worstRegression = diff.regressions.reduce((max, c) => Math.max(max, Math.abs(c.delta)), 0);
+            if (worstRegression > regressionThreshold) {
+              process.exit(1);
+            }
+          }
+
+          process.exit(result.overallScore >= 70 ? 0 : 1);
+        } else {
+          // Batch mode — baseline comparison is not supported for batch (would need per-URL baselines)
+          if (baseline) {
+            console.error(
+              'Error: --baseline is not supported with multiple URLs. Run single-URL audits for baseline comparison.',
+            );
+            process.exit(1);
+          }
+
+          const batch = await batchAudit(urls, baseOptions);
+          if (options.onlyFailures) {
+            batch.reports = batch.reports.map((r) => applyOnlyFailures(r, true));
+          }
+          reportBatch(batch, format);
+          process.exit(batch.summary.failed === 0 ? 0 : 1);
+        }
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(`Fatal: ${message}`);
+        process.exit(2);
+      }
+    });
 
   program.parse(argv);
 }

@@ -1,7 +1,8 @@
-import type { AuditReport, BatchAuditReport } from '../types.js';
+import type { AuditReport, BaselineDiff, BatchAuditReport } from '../types.js';
 
-export function reportJson(report: AuditReport): void {
-  console.log(JSON.stringify(report, null, 2));
+export function reportJson(report: AuditReport, diff?: BaselineDiff): void {
+  const output = diff ? { ...report, baselineDiff: diff } : report;
+  console.log(JSON.stringify(output, null, 2));
 }
 
 export function reportBatchJson(batch: BatchAuditReport): void {

@@ -1,5 +1,14 @@
 import { getGrade } from '../scorer.js';
-import type { AuditReport, BatchAuditReport, CheckResult, Finding, FindingStatus, Grade } from '../types.js';
+import type {
+  AuditReport,
+  BaselineDiff,
+  BatchAuditReport,
+  CheckDiff,
+  CheckResult,
+  Finding,
+  FindingStatus,
+  Grade,
+} from '../types.js';
 
 function gradeHslColor(grade: Grade): string {
   switch (grade.color) {
@@ -64,16 +73,23 @@ function renderFinding(f: Finding): string {
     </div>`;
 }
 
-function renderCheck(check: CheckResult): string {
+function renderDeltaBadge(delta: number): string {
+  if (delta === 0) return '<span class="delta delta-neutral">&mdash;</span>';
+  if (delta > 0) return `<span class="delta delta-up">&#9650;${delta}</span>`;
+  return `<span class="delta delta-down">&#9660;${Math.abs(delta)}</span>`;
+}
+
+function renderCheck(check: CheckResult, checkDiff?: CheckDiff): string {
   const grade = getGrade(check.score);
   const color = gradeHslColor(grade);
+  const diffHtml = checkDiff ? renderDeltaBadge(checkDiff.delta) : '';
 
   return `
     <details class="check" open>
       <summary>
         <div class="check-header">
           <span class="check-name">${escapeHtml(check.name)}</span>
-          <span class="check-score" style="color:${color}">${check.score}/100</span>
+          <span class="check-score" style="color:${color}">${check.score}/100 ${diffHtml}</span>
         </div>
         <div class="check-desc">${escapeHtml(check.description)}</div>
       </summary>
@@ -83,7 +99,44 @@ function renderCheck(check: CheckResult): string {
     </details>`;
 }
 
-function renderSingleReport(report: AuditReport): string {
+function renderDiffSummary(diff: BaselineDiff): string {
+  if (diff.regressions.length === 0 && diff.improvements.length === 0) return '';
+
+  const rows: string[] = [];
+
+  if (diff.regressions.length > 0) {
+    rows.push('<h3>Regressions</h3>');
+    for (const r of diff.regressions) {
+      rows.push(
+        `<div class="diff-row diff-regression">${escapeHtml(r.name)}: ${r.previous} &rarr; ${r.current} <span class="delta delta-down">&#9660;${Math.abs(r.delta)}</span></div>`,
+      );
+    }
+  }
+
+  if (diff.improvements.length > 0) {
+    rows.push('<h3>Improvements</h3>');
+    for (const imp of diff.improvements) {
+      rows.push(
+        `<div class="diff-row diff-improvement">${escapeHtml(imp.name)}: ${imp.previous} &rarr; ${imp.current} <span class="delta delta-up">&#9650;${imp.delta}</span></div>`,
+      );
+    }
+  }
+
+  return `<div class="diff-summary">${rows.join('')}</div>`;
+}
+
+function renderSingleReport(report: AuditReport, diff?: BaselineDiff): string {
+  const checkDiffs = new Map<string, CheckDiff>();
+  if (diff) {
+    for (const cd of diff.checks) {
+      checkDiffs.set(cd.id, cd);
+    }
+  }
+
+  const baselineInfo = diff
+    ? `<div class="meta-row"><span>Baseline: ${escapeHtml(diff.baselineTimestamp)}</span><span>Overall: ${diff.overallPrevious} &rarr; ${diff.overallCurrent} ${renderDeltaBadge(diff.overallDelta)}</span></div>`
+    : '';
+
   return `
     <div class="report">
       <div class="report-header">
@@ -94,10 +147,12 @@ function renderSingleReport(report: AuditReport): string {
             <span>${report.timestamp}</span>
             <span>${report.duration}ms</span>
           </div>
+          ${baselineInfo}
         </div>
       </div>
+      ${diff ? renderDiffSummary(diff) : ''}
       <div class="checks">
-        ${report.results.map(renderCheck).join('')}
+        ${report.results.map((c) => renderCheck(c, checkDiffs.get(c.id))).join('')}
       </div>
     </div>`;
 }
@@ -331,6 +386,25 @@ h1 {
   text-align: center;
 }
 .footer a { color: var(--text-secondary); }
+.delta { font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem; }
+.delta-up { color: hsl(140, 70%, 45%); }
+.delta-down { color: hsl(0, 80%, 50%); }
+.delta-neutral { color: var(--text-secondary); }
+.diff-summary {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+.diff-summary h3 { font-size: 0.9rem; margin-bottom: 0.5rem; }
+.diff-row { font-size: 0.85rem; padding: 0.25rem 0; }
+.diff-regression { color: hsl(0, 80%, 50%); }
+.diff-improvement { color: hsl(140, 70%, 45%); }
+@media (prefers-color-scheme: dark) {
+  .diff-regression { color: hsl(0, 70%, 60%); }
+  .diff-improvement { color: hsl(140, 70%, 60%); }
+}
 @media (max-width: 600px) {
   body { padding: 1rem; }
   .report-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
@@ -356,13 +430,13 @@ ${body}
 </html>`;
 }
 
-export function reportHtml(report: AuditReport): void {
-  const html = htmlShell(`AX Audit — ${report.url}`, renderSingleReport(report));
+export function reportHtml(report: AuditReport, diff?: BaselineDiff): void {
+  const html = htmlShell(`AX Audit — ${report.url}`, renderSingleReport(report, diff));
   console.log(html);
 }
 
 export function reportBatchHtml(batch: BatchAuditReport): void {
-  const body = renderBatchSummary(batch) + batch.reports.map(renderSingleReport).join('');
+  const body = renderBatchSummary(batch) + batch.reports.map((r) => renderSingleReport(r)).join('');
   const html = htmlShell(`AX Audit — Batch Report (${batch.summary.total} URLs)`, body);
   console.log(html);
 }
