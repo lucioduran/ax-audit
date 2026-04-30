@@ -19,16 +19,28 @@ npx ax-audit https://your-site.com
   AX Audit Report
   https://lucioduran.com
 
-  ███████████████████████████████████████░  98/100  Excellent
+  ███████████████████████████████████░░░░░  88/100  Good
 
   LLMs.txt (100/100)
     PASS  /llms.txt exists
+    PASS  /llms.txt Content-Type OK (text/plain)
     PASS  H1 heading: "Lucio Duran — Personal Portfolio"
     PASS  /llms-full.txt also available (bonus)
 
   Robots.txt (100/100)
-    PASS  All 6 core AI crawlers explicitly configured
-    PASS  31/31 known AI crawlers have explicit rules
+    PASS  All 8 core AI crawlers explicitly configured
+    PASS  32/47 known AI crawlers have explicit rules
+
+  HTML Rendering (90/100)
+    PASS  Server-rendered content detected (473 words)
+    PASS  Semantic landmarks present (main, article, header, footer, nav)
+    PASS  Single <h1> heading
+    PASS  3/3 <img> tags have alt attributes
+
+  TLS / HTTPS (100/100)
+    PASS  Site is served over HTTPS
+    PASS  HTTP requests redirect to HTTPS
+    PASS  HSTS preload-eligible
   ...
 ```
 
@@ -258,7 +270,7 @@ Fail on regressions using a committed baseline:
 npm test
 ```
 
-Comprehensive test suite covering all 14 checks, the scorer, baseline comparison, HTML parsing utilities, and edge cases. Uses Node.js built-in test runner (`node:test`), no extra test dependencies.
+198 tests covering all 14 checks, the scorer, baseline comparison, HTML parsing utilities, and edge cases. Uses Node.js built-in test runner (`node:test`), no extra test dependencies.
 
 ## Tech Stack
 

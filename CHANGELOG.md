@@ -17,7 +17,7 @@ All notable changes to ax-audit are documented here.
 - **meta-tags**: now validates Open Graph completeness (`og:title`, `og:description`, `og:url`, `og:type`, `og:image`, `og:site_name`) and Twitter Card completeness (`twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`). Reuses shared HTML utilities for tag matching.
 - **agent-json**: validates the `url` field is absolute and matches the audited origin, and that every `skills[]` entry has both `id` and `description`.
 - **llms-txt / agent-json / mcp / openapi**: validate `Content-Type` of the fetched resource (`text/plain` / `text/markdown` for llms.txt; `application/json` for the JSON manifests). Penalty: −5 per mismatch.
-- **robots-txt**: `CORE_AI_CRAWLERS` extended (now 8 entries: GPTBot, ClaudeBot, ChatGPT-User, Claude-SearchBot, Google-Extended, PerplexityBot, OAI-SearchBot, CCBot). `ALL_AI_CRAWLERS` extended with MistralAI-User, KagiBot, GeminiBot, Goose, AwarioBot family, Bingbot, ImagesiftBot, omgili, Webzio-Extended, and others (40 known crawlers total).
+- **robots-txt**: `CORE_AI_CRAWLERS` extended (now 8 entries: GPTBot, ClaudeBot, ChatGPT-User, Claude-SearchBot, Google-Extended, PerplexityBot, OAI-SearchBot, CCBot). `ALL_AI_CRAWLERS` extended with MistralAI-User, KagiBot, GeminiBot, Goose, AwarioBot family, Bingbot, ImagesiftBot, omgili, Webzio-Extended, and others (47 known crawlers total).
 
 ### Refactored
 
@@ -30,7 +30,11 @@ All notable changes to ax-audit are documented here.
 
 ### Tests
 
-- 60+ new tests (sitemap, html-rendering, seo-basics, tls-https, well-known-ai, expanded meta-tags / agent-json / mcp / openapi / llms-txt for the new validations).
+- 198 tests total (77 new). New suites: html-rendering (14), sitemap (12), seo-basics (19), tls-https (11), well-known-ai (8). Plus expanded meta-tags / agent-json / mcp / openapi / llms-txt suites for the new validations.
+
+### Breaking
+
+- Score deltas vs v2.x are expected on the same site because (a) weights were redistributed across 14 checks instead of 9, and (b) Content-Type validation on `/llms.txt` and the `.well-known` JSON manifests now applies a −5 penalty per mismatch. Sites previously scoring 100 may drop a few points until the new signals are addressed. Use `--baseline` to track regressions explicitly.
 
 ## [2.4.0] - 2026-04-16
 
