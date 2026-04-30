@@ -28,11 +28,29 @@ describe('llms-txt', () => {
     ].join('\n');
 
     const ctx = mockContext({
-      '/llms.txt': mockResponse({ body }),
+      '/llms.txt': mockResponse({ body, headers: { 'content-type': 'text/plain; charset=utf-8' } }),
       '/llms-full.txt': mockResponse({ body: body + '\n\nMore details...' }),
     });
     const result = await check(ctx);
     assert.equal(result.score, 100);
+  });
+
+  it('should warn on wrong Content-Type for /llms.txt', async () => {
+    const body = '# Title\n\n> Description\n\n## Section\n\n[Link](https://example.com)\n\nFiller content here.';
+    const ctx = mockContext({
+      '/llms.txt': mockResponse({ body, headers: { 'content-type': 'text/html' } }),
+    });
+    const result = await check(ctx);
+    assert.ok(result.findings.some((f) => f.status === 'warn' && f.message.includes('Content-Type')));
+  });
+
+  it('should warn on missing Content-Type for /llms.txt', async () => {
+    const body = '# Title\n\n> Description\n\n## Section\n\n[Link](https://example.com)\n\nFiller content here.';
+    const ctx = mockContext({
+      '/llms.txt': mockResponse({ body, headers: {} }),
+    });
+    const result = await check(ctx);
+    assert.ok(result.findings.some((f) => f.status === 'warn' && f.message.includes('Content-Type')));
   });
 
   it('should penalize missing H1 heading', async () => {

@@ -1,12 +1,12 @@
 import { guideUrl } from '../guide-urls.js';
 import type { CheckContext, CheckResult, CheckMeta, Finding } from '../types.js';
-import { buildResult } from './utils.js';
+import { buildResult, checkContentType } from './utils.js';
 
 export const meta: CheckMeta = {
   id: 'openapi',
   name: 'OpenAPI Spec',
   description: 'Checks /.well-known/openapi.json presence and validity',
-  weight: 8,
+  weight: 6,
 };
 
 export default async function check(ctx: CheckContext): Promise<CheckResult> {
@@ -28,6 +28,16 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   }
 
   findings.push({ status: 'pass', message: '/.well-known/openapi.json exists' });
+
+  const ctFinding = checkContentType(res, ['application/json'], {
+    checkId: meta.id,
+    resourceLabel: '/.well-known/openapi.json',
+    anchor: 'wrong-content-type',
+  });
+  if (ctFinding) {
+    findings.push(ctFinding);
+    score -= 5;
+  }
 
   let data: Record<string, unknown>;
   try {

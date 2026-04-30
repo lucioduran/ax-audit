@@ -1,12 +1,12 @@
 import { guideUrl } from '../guide-urls.js';
 import type { CheckContext, CheckResult, CheckMeta, Finding } from '../types.js';
-import { buildResult } from './utils.js';
+import { buildResult, checkContentType } from './utils.js';
 
 export const meta: CheckMeta = {
   id: 'llms-txt',
   name: 'LLMs.txt',
   description: 'Checks /llms.txt presence and spec compliance',
-  weight: 15,
+  weight: 11,
 };
 
 export default async function check(ctx: CheckContext): Promise<CheckResult> {
@@ -28,6 +28,22 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   }
 
   findings.push({ status: 'pass', message: '/llms.txt exists' });
+
+  const ctFinding = checkContentType(res, ['text/plain', 'text/markdown'], {
+    checkId: meta.id,
+    resourceLabel: '/llms.txt',
+    anchor: 'wrong-content-type',
+  });
+  if (ctFinding) {
+    findings.push(ctFinding);
+    score -= 5;
+  } else {
+    findings.push({
+      status: 'pass',
+      message: `/llms.txt Content-Type OK (${res.headers['content-type']?.split(';')[0]})`,
+    });
+  }
+
   const text = res.body;
   const lines = text
     .split('\n')

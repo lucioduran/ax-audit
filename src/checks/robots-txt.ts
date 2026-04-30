@@ -7,7 +7,7 @@ export const meta: CheckMeta = {
   id: 'robots-txt',
   name: 'Robots.txt',
   description: 'Checks AI crawler configuration in robots.txt',
-  weight: 15,
+  weight: 11,
 };
 
 interface BotEntry {

@@ -24,17 +24,37 @@ describe('agent-json', () => {
       name: 'My Agent',
       description: 'Does stuff',
       url: 'https://example.com',
-      skills: [{ id: 'search', name: 'Search' }],
+      skills: [{ id: 'search', description: 'Searches the site' }],
       protocolVersion: '0.2.0',
       capabilities: { streaming: true },
       authentication: { type: 'bearer' },
       documentationUrl: 'https://example.com/docs',
     };
     const ctx = mockContext({
-      '/agent.json': mockResponse({ body: JSON.stringify(data) }),
+      '/agent.json': mockResponse({
+        body: JSON.stringify(data),
+        headers: { 'content-type': 'application/json' },
+      }),
     });
     const result = await check(ctx);
     assert.equal(result.score, 100);
+  });
+
+  it('should warn when /.well-known/agent.json has wrong Content-Type', async () => {
+    const data = {
+      name: 'Agent',
+      description: 'Desc',
+      url: 'https://example.com',
+      skills: [{ id: 'a', description: 'd' }],
+    };
+    const ctx = mockContext({
+      '/agent.json': mockResponse({
+        body: JSON.stringify(data),
+        headers: { 'content-type': 'text/plain' },
+      }),
+    });
+    const result = await check(ctx);
+    assert.ok(result.findings.some((f) => f.status === 'warn' && f.message.includes('Content-Type')));
   });
 
   it('should penalize missing required fields', async () => {
@@ -100,5 +120,61 @@ describe('agent-json', () => {
     });
     const result = await check(ctx);
     assert.ok(result.score >= 0);
+  });
+
+  it('should warn when url points to a different origin', async () => {
+    const data = {
+      name: 'Agent',
+      description: 'Desc',
+      url: 'https://other.com',
+      skills: [{ id: 'a', description: 'd' }],
+    };
+    const ctx = mockContext({
+      '/agent.json': mockResponse({ body: JSON.stringify(data) }),
+    });
+    const result = await check(ctx);
+    assert.ok(result.findings.some((f) => f.message.includes('different origin')));
+  });
+
+  it('should warn when url is not a valid absolute URL', async () => {
+    const data = {
+      name: 'Agent',
+      description: 'Desc',
+      url: '/relative-only',
+      skills: [{ id: 'a', description: 'd' }],
+    };
+    const ctx = mockContext({
+      '/agent.json': mockResponse({ body: JSON.stringify(data) }),
+    });
+    const result = await check(ctx);
+    assert.ok(result.findings.some((f) => f.message.includes('not a valid absolute URL')));
+  });
+
+  it('should warn when skills are missing id or description', async () => {
+    const data = {
+      name: 'Agent',
+      description: 'Desc',
+      url: 'https://example.com',
+      skills: [{ id: 'a' }, { description: 'no id' }, { id: 'b', description: 'ok' }],
+    };
+    const ctx = mockContext({
+      '/agent.json': mockResponse({ body: JSON.stringify(data) }),
+    });
+    const result = await check(ctx);
+    assert.ok(result.findings.some((f) => f.message.includes('missing id or description')));
+  });
+
+  it('should pass when all skills have id + description', async () => {
+    const data = {
+      name: 'Agent',
+      description: 'Desc',
+      url: 'https://example.com',
+      skills: [{ id: 'a', description: 'one' }, { id: 'b', description: 'two' }],
+    };
+    const ctx = mockContext({
+      '/agent.json': mockResponse({ body: JSON.stringify(data) }),
+    });
+    const result = await check(ctx);
+    assert.ok(result.findings.some((f) => f.status === 'pass' && f.message.includes('id + description')));
   });
 });

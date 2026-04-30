@@ -40,15 +40,20 @@ AI agents and LLMs are increasingly crawling, indexing, and interacting with web
 
 | Check | What it audits | Weight |
 |---|---|---|
-| **LLMs.txt** | `/llms.txt` presence and [llmstxt.org](https://llmstxt.org) spec compliance | 15% |
-| **Robots.txt** | AI crawler configuration, wildcard detection, partial path restrictions | 15% |
-| **Structured Data** | JSON-LD on homepage (schema.org, `@graph`, entity types) | 13% |
-| **HTTP Headers** | Security headers + AI discovery `Link` headers + CORS on `.well-known` | 13% |
-| **Agent Card** | `/.well-known/agent.json` [A2A protocol](https://a2a-protocol.org) compliance | 10% |
-| **MCP** | `/.well-known/mcp.json` [Model Context Protocol](https://modelcontextprotocol.io) server config | 10% |
-| **Security.txt** | `/.well-known/security.txt` [RFC 9116](https://www.rfc-editor.org/rfc/rfc9116) compliance | 8% |
-| **Meta Tags** | AI meta tags (`ai:*`), `rel="alternate"` to llms.txt, `rel="me"` identity links | 8% |
-| **OpenAPI** | `/.well-known/openapi.json` presence and schema validity | 8% |
+| **LLMs.txt** | `/llms.txt` presence, [llmstxt.org](https://llmstxt.org) spec, Content-Type | 11% |
+| **Robots.txt** | AI crawler configuration (40+ known crawlers), wildcard detection, partial path restrictions | 11% |
+| **HTML Rendering** | Server-rendered content, semantic landmarks, SPA-shell detection, alt coverage | 9% |
+| **Structured Data** | JSON-LD on homepage (schema.org, `@graph`, entity types) | 9% |
+| **HTTP Headers** | Security headers + AI discovery `Link` headers + CORS on `.well-known` | 9% |
+| **Agent Card** | `/.well-known/agent.json` [A2A protocol](https://a2a-protocol.org) + same-origin url + skill quality | 7% |
+| **MCP** | `/.well-known/mcp.json` [Model Context Protocol](https://modelcontextprotocol.io) server config | 7% |
+| **SEO Basics** | `<title>`, meta description, canonical, `<html lang>`, charset, viewport, hreflang | 7% |
+| **Security.txt** | `/.well-known/security.txt` [RFC 9116](https://www.rfc-editor.org/rfc/rfc9116) compliance | 6% |
+| **Meta Tags** | AI meta tags (`ai:*`), `rel="alternate"`, `rel="me"`, OpenGraph + Twitter Card completeness | 6% |
+| **OpenAPI** | `/.well-known/openapi.json` presence, schema validity, Content-Type | 6% |
+| **TLS / HTTPS** | HTTPS, HTTP→HTTPS redirect, HSTS with `preload` + `includeSubDomains` | 5% |
+| **Sitemap** | `sitemap.xml` (or `Sitemap:` from robots.txt) — XML validity, `<lastmod>` coverage, freshness, sitemap-index handling | 4% |
+| **AI Well-Known** | Emerging files: `/.well-known/ai.txt`, `genai.txt`, `ai-plugin.json`, `agents.json`, `nlweb.json` | 3% |
 
 ## Install
 
@@ -232,15 +237,20 @@ Fail on regressions using a committed baseline:
 
 | Check ID | Use with `--checks` |
 |---|---|
-| `llms-txt` | LLMs.txt spec compliance |
-| `robots-txt` | AI crawler configuration |
+| `llms-txt` | LLMs.txt spec + Content-Type |
+| `robots-txt` | AI crawler configuration (40+ crawlers) |
+| `html-rendering` | SSR / SPA-shell detection + semantic HTML |
 | `structured-data` | JSON-LD structured data |
 | `http-headers` | Security + AI discovery headers |
-| `agent-json` | A2A Agent Card |
+| `agent-json` | A2A Agent Card + same-origin validation |
 | `mcp` | MCP server configuration |
+| `seo-basics` | title / description / canonical / lang / hreflang |
 | `security-txt` | RFC 9116 Security.txt |
-| `meta-tags` | AI meta tags and identity links |
+| `meta-tags` | AI meta tags + OpenGraph + Twitter Card |
 | `openapi` | OpenAPI specification |
+| `tls-https` | HTTPS + HTTP→HTTPS redirect + HSTS preload |
+| `sitemap` | sitemap.xml validation + freshness |
+| `well-known-ai` | Emerging AI discovery files |
 
 ## Testing
 
@@ -248,7 +258,7 @@ Fail on regressions using a committed baseline:
 npm test
 ```
 
-121 tests covering all 9 checks, the scorer, baseline comparison, and edge cases. Uses Node.js built-in test runner (`node:test`), no extra test dependencies.
+Comprehensive test suite covering all 14 checks, the scorer, baseline comparison, HTML parsing utilities, and edge cases. Uses Node.js built-in test runner (`node:test`), no extra test dependencies.
 
 ## Tech Stack
 

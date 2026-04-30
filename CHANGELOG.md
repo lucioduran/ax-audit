@@ -2,6 +2,36 @@
 
 All notable changes to ax-audit are documented here.
 
+## [3.0.0] - 2026-04-30
+
+### Added — five new checks (full agent-optimization coverage)
+
+- **html-rendering** (weight 9%): detects whether the static HTML response actually contains content, since most AI crawlers (GPTBot, ClaudeBot, CCBot, …) do not execute JavaScript. Heuristics: text length, word count, text-to-markup ratio, empty SPA mount points (`#root`, `#__next`, `#__nuxt`, `#app`, `#svelte`, `#gatsby`), semantic landmarks (`<main>`, `<article>`, `<header>`, `<footer>`, `<nav>`), single `<h1>`, `<noscript>` fallback, and `<img alt>` coverage.
+- **sitemap** (weight 4%): locates the sitemap via `robots.txt` `Sitemap:` directive or `/sitemap.xml`, validates XML shape, parses `<urlset>` and `<sitemapindex>`, samples child sitemaps from indexes, scores `<lastmod>` coverage and freshness (>365d → stale), enforces 50k-URL / 50MB limits.
+- **seo-basics** (weight 7%): `<title>` length 20–70, `<meta name="description">` length 70–160, `<link rel="canonical">` (absolute, single), `<html lang>` (BCP 47), `<meta charset="utf-8">`, `<meta name="viewport">`, hreflang completeness with `x-default`. Title/description duplication detection.
+- **tls-https** (weight 5%): site is served over HTTPS, HTTP redirects to HTTPS, HSTS `max-age` >= 6 months (1 year for preload), `includeSubDomains`, `preload` directive eligibility per https://hstspreload.org.
+- **well-known-ai** (weight 3%): emerging AI-specific discovery files — `/.well-known/ai.txt` (Spawning), `/.well-known/genai.txt`, `/ai-plugin.json` (legacy ChatGPT plugin), `/agents.json` (Wildcard / OpenAgents), `/.well-known/nlweb.json` (Microsoft NLWeb). Each present file scores; coverage is bonus rather than baseline.
+
+### Improved — existing checks
+
+- **meta-tags**: now validates Open Graph completeness (`og:title`, `og:description`, `og:url`, `og:type`, `og:image`, `og:site_name`) and Twitter Card completeness (`twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`). Reuses shared HTML utilities for tag matching.
+- **agent-json**: validates the `url` field is absolute and matches the audited origin, and that every `skills[]` entry has both `id` and `description`.
+- **llms-txt / agent-json / mcp / openapi**: validate `Content-Type` of the fetched resource (`text/plain` / `text/markdown` for llms.txt; `application/json` for the JSON manifests). Penalty: −5 per mismatch.
+- **robots-txt**: `CORE_AI_CRAWLERS` extended (now 8 entries: GPTBot, ClaudeBot, ChatGPT-User, Claude-SearchBot, Google-Extended, PerplexityBot, OAI-SearchBot, CCBot). `ALL_AI_CRAWLERS` extended with MistralAI-User, KagiBot, GeminiBot, Goose, AwarioBot family, Bingbot, ImagesiftBot, omgili, Webzio-Extended, and others (40 known crawlers total).
+
+### Refactored
+
+- New shared module `src/checks/html-utils.ts` with regex-based primitives for HTML inspection (`getMetaContent`, `findLinkTags`, `findMetaTagsByPrefix`, `extractVisibleText`, `countExecutableScripts`, `getTagAttribute`, …). Eliminates duplicated regex code across `meta-tags`, `seo-basics`, `html-rendering`, and `structured-data`.
+- New shared utility `checkContentType` in `src/checks/utils.ts` for consistent Content-Type validation.
+
+### Scoring
+
+- Weights redistributed across 14 checks, total still sums to 100. New highest-weight signals are llms-txt and robots-txt (11% each) followed by html-rendering / structured-data / http-headers (9%).
+
+### Tests
+
+- 60+ new tests (sitemap, html-rendering, seo-basics, tls-https, well-known-ai, expanded meta-tags / agent-json / mcp / openapi / llms-txt for the new validations).
+
 ## [2.4.0] - 2026-04-16
 
 ### Added

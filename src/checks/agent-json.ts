@@ -1,13 +1,23 @@
 import { AGENT_JSON_REQUIRED_FIELDS } from '../constants.js';
 import { guideUrl } from '../guide-urls.js';
 import type { CheckContext, CheckResult, CheckMeta, Finding } from '../types.js';
-import { buildResult } from './utils.js';
+import { buildResult, checkContentType } from './utils.js';
 
+/**
+ * "agent-json" — `/.well-known/agent.json` per the A2A (Agent-to-Agent) protocol.
+ *
+ * Validates the document on three axes:
+ * 1. JSON well-formedness
+ * 2. Required fields per the A2A spec (`name`, `description`, `url`, `skills`)
+ * 3. Field semantics: `url` should resolve to the same origin as the audited site,
+ *    `skills[]` should each declare an `id` and `description`, and protocol/optional
+ *    fields are present where expected.
+ */
 export const meta: CheckMeta = {
   id: 'agent-json',
   name: 'Agent Card (A2A)',
   description: 'Checks /.well-known/agent.json A2A protocol compliance',
-  weight: 10,
+  weight: 7,
 };
 
 export default async function check(ctx: CheckContext): Promise<CheckResult> {
@@ -29,6 +39,16 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   }
 
   findings.push({ status: 'pass', message: '/.well-known/agent.json exists' });
+
+  const ctFinding = checkContentType(res, ['application/json'], {
+    checkId: meta.id,
+    resourceLabel: '/.well-known/agent.json',
+    anchor: 'wrong-content-type',
+  });
+  if (ctFinding) {
+    findings.push(ctFinding);
+    score -= 5;
+  }
 
   let data: Record<string, unknown>;
   try {
@@ -58,8 +78,41 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
     }
   }
 
+  if (typeof data.url === 'string' && data.url.length > 0) {
+    const sameOrigin = sameHost(data.url, ctx.url);
+    if (sameOrigin === false) {
+      findings.push({
+        status: 'warn',
+        message: `agent.json "url" points to a different origin: ${data.url}`,
+        hint: 'The url field should match the audited site origin. Pointing it elsewhere can confuse agents about the canonical agent endpoint.',
+        learnMoreUrl: guideUrl(meta.id, 'url-mismatch'),
+      });
+      score -= 5;
+    } else if (sameOrigin === null) {
+      findings.push({
+        status: 'warn',
+        message: `agent.json "url" is not a valid absolute URL: ${data.url}`,
+        hint: 'Provide an absolute https:// URL for the url field.',
+        learnMoreUrl: guideUrl(meta.id, 'url-invalid'),
+      });
+      score -= 5;
+    }
+  }
+
   if (Array.isArray(data.skills) && data.skills.length > 0) {
     findings.push({ status: 'pass', message: `${data.skills.length} skill(s) defined` });
+    const incomplete = (data.skills as Record<string, unknown>[]).filter((s) => !s.id || !s.description);
+    if (incomplete.length === 0) {
+      findings.push({ status: 'pass', message: 'All skills have id + description' });
+    } else {
+      findings.push({
+        status: 'warn',
+        message: `${incomplete.length}/${data.skills.length} skill(s) missing id or description`,
+        hint: 'Each entry in skills[] should include both an id and a description so agents can address it and reason about its purpose.',
+        learnMoreUrl: guideUrl(meta.id, 'incomplete-skills'),
+      });
+      score -= 5;
+    }
   } else if (Array.isArray(data.skills)) {
     findings.push({
       status: 'warn',
@@ -105,4 +158,15 @@ export default async function check(ctx: CheckContext): Promise<CheckResult> {
   }
 
   return buildResult(meta, score, findings, start);
+}
+
+/** Returns `true` when the two URLs share host (case-insensitive), `false` if hosts differ, `null` on parse error. */
+function sameHost(a: string, b: string): boolean | null {
+  try {
+    const ua = new URL(a);
+    const ub = new URL(b);
+    return ua.host.toLowerCase() === ub.host.toLowerCase();
+  } catch {
+    return null;
+  }
 }

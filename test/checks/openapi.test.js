@@ -27,10 +27,30 @@ describe('openapi', () => {
       servers: [{ url: 'https://api.example.com' }],
     };
     const ctx = mockContext({
-      '/openapi.json': mockResponse({ body: JSON.stringify(data) }),
+      '/openapi.json': mockResponse({
+        body: JSON.stringify(data),
+        headers: { 'content-type': 'application/json' },
+      }),
     });
     const result = await check(ctx);
     assert.equal(result.score, 100);
+  });
+
+  it('should warn when /.well-known/openapi.json has wrong Content-Type', async () => {
+    const data = {
+      openapi: '3.1.0',
+      info: { title: 'API', description: 'Desc' },
+      paths: { '/a': {} },
+      servers: [{ url: 'https://api.example.com' }],
+    };
+    const ctx = mockContext({
+      '/openapi.json': mockResponse({
+        body: JSON.stringify(data),
+        headers: { 'content-type': 'text/plain' },
+      }),
+    });
+    const result = await check(ctx);
+    assert.ok(result.findings.some((f) => f.status === 'warn' && f.message.includes('Content-Type')));
   });
 
   it('should penalize Swagger version', async () => {

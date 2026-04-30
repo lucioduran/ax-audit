@@ -34,11 +34,28 @@ describe('mcp', () => {
           prompts: [{ name: 'summarize', description: 'Summarize text' }],
           authentication: { type: 'bearer' },
         }),
-        headers: { 'access-control-allow-origin': '*' },
+        headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' },
       }),
     });
     const result = await check(ctx);
     assert.equal(result.score, 100);
+  });
+
+  it('should warn when /.well-known/mcp.json has wrong Content-Type', async () => {
+    const ctx = mockContext({
+      '/.well-known/mcp.json': mockResponse({
+        body: JSON.stringify({
+          name: 'Test',
+          description: 'Test',
+          tools: [{ name: 't', description: 'd' }],
+          resources: [{ uri: 'file:///x' }],
+          protocolVersion: '2025-03-26',
+        }),
+        headers: { 'access-control-allow-origin': '*', 'content-type': 'text/plain' },
+      }),
+    });
+    const result = await check(ctx);
+    assert.ok(result.findings.some((f) => f.status === 'warn' && f.message.includes('Content-Type')));
   });
 
   it('should penalize missing server name', async () => {

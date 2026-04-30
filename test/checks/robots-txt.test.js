@@ -31,6 +31,12 @@ describe('robots-txt', () => {
       'User-agent: PerplexityBot',
       'Allow: /',
       '',
+      'User-agent: OAI-SearchBot',
+      'Allow: /',
+      '',
+      'User-agent: CCBot',
+      'Allow: /',
+      '',
       'Sitemap: https://example.com/sitemap.xml',
     ].join('\n');
 

@@ -9,6 +9,15 @@ const pkg = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf-
 export const VERSION: string = pkg.version;
 export const USER_AGENT = `ax-audit/${pkg.version} (https://github.com/lucioduran/ax-audit)`;
 
+/**
+ * Known AI / LLM crawlers grouped by primary purpose. The audit recommends explicit
+ * `User-agent:` rules for every entry so site operators can see exactly which agents
+ * have access. Buckets:
+ *
+ * - `training`   — bots that scrape content for model training corpora
+ * - `search`     — bots that fetch on behalf of a live answer engine / search UI
+ * - `fetching`   — generic on-demand fetchers (browsing, summarization, automation)
+ */
 export const AI_CRAWLERS: Record<string, string[]> = {
   training: [
     'GPTBot',
@@ -29,6 +38,13 @@ export const AI_CRAWLERS: Record<string, string[]> = {
     'DeepSeek-AI',
     'PanguBot',
     'Diffbot',
+    'MistralAI-User',
+    'Kangaroo Bot',
+    'Timpibot',
+    'omgili',
+    'omgilibot',
+    'ImagesiftBot',
+    'Webzio-Extended',
   ],
   search: [
     'OAI-SearchBot',
@@ -42,12 +58,21 @@ export const AI_CRAWLERS: Record<string, string[]> = {
     'Petalbot',
     'Google-CloudVertexBot',
     'Gemini',
+    'GeminiBot',
+    'KagiBot',
+    'NeevaBot',
+    'PhindBot',
   ],
-  fetching: ['FirecrawlAgent', 'Facebookbot'],
+  fetching: ['FirecrawlAgent', 'Facebookbot', 'Bingbot', 'Goose', 'AwarioBot', 'AwarioRssBot', 'AwarioSmartBot'],
 };
 
 export const ALL_AI_CRAWLERS: string[] = [...AI_CRAWLERS.training, ...AI_CRAWLERS.search, ...AI_CRAWLERS.fetching];
 
+/**
+ * The "must-configure" subset — these are the agents a typical operator should grant
+ * (or knowingly deny) explicit access to. ax-audit grades the robots.txt section heavily
+ * on coverage of this short list, while still rewarding broader explicit rules.
+ */
 export const CORE_AI_CRAWLERS: string[] = [
   'GPTBot',
   'ClaudeBot',
@@ -55,18 +80,30 @@ export const CORE_AI_CRAWLERS: string[] = [
   'Claude-SearchBot',
   'Google-Extended',
   'PerplexityBot',
+  'OAI-SearchBot',
+  'CCBot',
 ];
 
+/**
+ * Default weight per check (sum: 100). Individual `CheckMeta.weight` overrides this map.
+ * Keep weights aligned with real-world impact — discovery + content-rendering are the
+ * highest-leverage signals for AI agents.
+ */
 export const CHECK_WEIGHTS: Record<string, number> = {
-  'llms-txt': 15,
-  'robots-txt': 15,
-  'structured-data': 13,
-  'http-headers': 13,
-  'agent-json': 10,
-  mcp: 10,
-  'security-txt': 8,
-  'meta-tags': 8,
-  openapi: 8,
+  'llms-txt': 11,
+  'robots-txt': 11,
+  'html-rendering': 9,
+  'structured-data': 9,
+  'http-headers': 9,
+  'agent-json': 7,
+  mcp: 7,
+  'seo-basics': 7,
+  'security-txt': 6,
+  'meta-tags': 6,
+  openapi: 6,
+  'tls-https': 5,
+  sitemap: 4,
+  'well-known-ai': 3,
 };
 
 export const GRADES: Grade[] = [
